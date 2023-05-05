@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2023-05-05
+### :bug: Bug Fixes
+- [`1d2deec`](https://github.com/clouddrove/test-caller/commit/1d2deec4a03a465d3e6cfa49cae98a509f13c7a3) - used secrets inherit while calling workflow *(commit by [@nileshgadgi](https://github.com/nileshgadgi))*
+
+
 ## [1.0.1] - 2023-05-04
 ### :bug: Bug Fixes
 - [`8a9e592`](https://github.com/clouddrove/terraform-azure-databricks/commit/8a9e592b0e8b6c5acebcb8c4bc7b1eed46da9bf8) - Updated naming format of cluster *(commit by [@nileshgadgi](https://github.com/nileshgadgi))*
@@ -18,3 +23,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [`ca76e8f`](https://github.com/clouddrove/terraform-azure-databricks/commit/ca76e8f7e454cfcbfd75b142624da1e35c0ff1d8) - Added the spark version variable
 
 [1.0.1]: https://github.com/clouddrove/terraform-azure-databricks/compare/1.0.0...1.0.1
+[1.0.3]: https://github.com/clouddrove/test-caller/compare/1.0.2...1.0.3
