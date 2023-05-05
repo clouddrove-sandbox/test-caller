@@ -2,7 +2,6 @@
 ## Copyright @ CloudDrove. All Right Reserved.
 
 module "labels" {
-
   source  = "clouddrove/labels/azure"
   version = "1.0.0"
 
