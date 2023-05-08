@@ -1,5 +1,5 @@
 // Managed By : CloudDrove
-// Description : This Terratest is used to test the Terraform VPC module.
+// Description : This Terratest is used to test the Terraform public subnet module.
 // Copyright @ CloudDrove. All Right Reserved.
 package test
 
@@ -13,8 +13,9 @@ func Test(t *testing.T) {
 	t.Parallel()
 
 	terraformOptions := &terraform.Options{
-		// Source path of Terraform directory.
-		TerraformDir: "../_example",
+		// The path to where our Terraform code is located
+		TerraformDir: "../../_example/public-subnet",
+		Upgrade:      true,
 	}
 
 	// This will run 'terraform init' and 'terraform application' and will fail the test if any errors occur
@@ -24,10 +25,10 @@ func Test(t *testing.T) {
 	defer terraform.Destroy(t, terraformOptions)
 
 	// To get the value of an output variable, run 'terraform output'
-	Id := terraform.Output(t, terraformOptions, "virtual_network_id")
-	Tags := terraform.OutputMap(t, terraformOptions, "tags")
+	publicTags := terraform.OutputMap(t, terraformOptions, "public_tags")
+
+	//Expected Values
 
 	// Check that we get back the outputs that we expect
-	assert.Equal(t, "test-clouddrove-virtual-network", Tags["Name"])
-	assert.Contains(t, Id, "/subscriptions")
+	assert.Equal(t, "subnets-test-public", publicTags["Name"])
 }

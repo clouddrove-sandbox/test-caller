@@ -1,38 +1,62 @@
-output "vnet_id" {
-  description = "The id of the newly created vNet"
-  value       = azurerm_virtual_network.vnet.*.id
+#Module      : SUBNET
+#Description : Terraform module to create public, private and public-private subnet with
+#              network acl, route table, Elastic IP, nat gateway, flow log.
+output "public_subnet_id" {
+  value       = aws_subnet.public.*.id
+  description = "The ID of the subnet."
 }
 
-output "vnet_name" {
-  description = "The name of the newly created vNet"
-  value       = azurerm_virtual_network.vnet.*.name
+output "public_subnet_cidrs" {
+  value       = aws_subnet.public.*.cidr_block
+  description = "CIDR blocks of the created public subnets."
 }
 
-output "vnet_location" {
-  description = "The location of the newly created vNet"
-  value       = azurerm_virtual_network.vnet.*.location
+output "public_subnet_cidrs_ipv6" {
+  value       = aws_subnet.public.*.ipv6_cidr_block
+  description = "CIDR blocks of the created public subnets."
 }
 
-output "vnet_address_space" {
-  description = "The address space of the newly created vNet"
-  value       = azurerm_virtual_network.vnet.*.address_space
+output "private_subnet_id" {
+  value       = aws_subnet.private.*.id
+  description = "The ID of the private subnet."
 }
 
-output "vnet_guid" {
-  description = "The GUID of the virtual network."
-  value       = azurerm_virtual_network.vnet.*.guid
+output "private_subnet_cidrs" {
+  value       = aws_subnet.private.*.cidr_block
+  description = "CIDR blocks of the created private subnets."
 }
 
-output "vnet_rg_name" {
-  description = "The name of the resource group in which to create the virtual network. Changing this forces a new resource to be created"
-  value       = azurerm_virtual_network.vnet.*.resource_group_name
+output "private_subnet_cidrs_ipv6" {
+  value       = aws_subnet.private.*.ipv6_cidr_block
+  description = "CIDR blocks of the created private subnets."
 }
 
-output "ddos_protection_plan_id" {
-  value       = join("", azurerm_network_ddos_protection_plan.example.*.id)
-  description = "The ID of the DDoS Protection Plan"
+output "public_route_tables_id" {
+  value       = aws_route_table.public.*.id
+  description = "The ID of the routing table."
 }
-output "network_watcher_id" {
-  value       = join("", azurerm_network_watcher.test.*.id)
-  description = "The ID of the Network Watcher."
+
+output "private_route_tables_id" {
+  value       = aws_route_table.private.*.id
+  description = "The ID of the routing table."
+}
+
+output "private_tags" {
+  value       = module.private-labels.tags
+  description = "A mapping of private tags to assign to the resource."
+}
+
+output "public_tags" {
+  value       = module.public-labels.tags
+  description = "A mapping of public tags to assign to the resource."
+}
+
+output "public_acl" {
+  value = join("", aws_network_acl.public.*.id)
+  description = "The ID of the network ACL."
+}
+
+output "private_acl" {
+  value = join("", aws_network_acl.private.*.id)
+  description = "The ID of the network ACL."
 }

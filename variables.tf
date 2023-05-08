@@ -8,7 +8,7 @@ variable "name" {
 
 variable "repository" {
   type        = string
-  default     = "https://github.com/clouddrove/terraform-azure-virtual-network"
+  default     = "https://github.com/clouddrove/terraform-aws-subnet"
   description = "Terraform current module repo"
 
   validation {
@@ -26,7 +26,7 @@ variable "environment" {
 
 variable "label_order" {
   type        = list(any)
-  default     = ["name", "environment"]
+  default     = []
   description = "Label order, e.g. `name`,`application`."
 }
 
@@ -54,113 +54,154 @@ variable "managedby" {
   description = "ManagedBy, eg 'CloudDrove'."
 }
 
-variable "enable" {
-  type        = bool
-  default     = true
-  description = "Flag to control the module creation"
-}
-
-variable "resource_group_name" {
-  type        = string
-  default     = ""
-  description = "The name of the resource group in which to create the virtual network. Changing this forces a new resource to be created."
-}
-
-variable "location" {
-  type        = string
-  default     = ""
-  description = "The location/region where the virtual network is created. Changing this forces a new resource to be created."
-}
-
-variable "address_space" {
-  type        = string
-  default     = ""
-  description = "The address space that is used by the virtual network."
-}
-
-variable "address_spaces" {
+#Module      : SUBNET
+#Description : Terraform SUBNET module variables.
+variable "availability_zones" {
   type        = list(string)
   default     = []
-  description = "The list of the address spaces that is used by the virtual network."
-}
-variable "bgp_community" {
-  type        = number
-  default     = null
-  description = "The BGP community attribute in format <as-number>:<community-value>."
-}
-variable "edge_zone" {
-  type        = string
-  default     = null
-  description = " (Optional) Specifies the Edge Zone within the Azure Region where this Virtual Network should exist. Changing this forces a new Virtual Network to be created."
-}
-variable "flow_timeout_in_minutes" {
-  type        = number
-  default     = 10
-  description = "The flow timeout in minutes for the Virtual Network, which is used to enable connection tracking for intra-VM flows. Possible values are between 4 and 30 minutes."
+  description = "List of Availability Zones (e.g. `['us-east-1a', 'us-east-1b', 'us-east-1c']`)."
 }
 
-# If no values specified, this defaults to Azure DNS
-variable "dns_servers" {
+variable "max_subnets" {
+  type        = number
+  default     = 6
+  description = "Maximum number of subnets that can be created. The variable is used for CIDR blocks calculation."
+}
+
+variable "type" {
+  type        = string
+  default     = ""
+  description = "Type of subnets to create (`private` or `public`)."
+}
+
+variable "vpc_id" {
+  type        = string
+  description = "VPC ID."
+  sensitive   = true
+}
+
+variable "cidr_block" {
+  type        = string
+  description = "Base CIDR block which is divided into subnet CIDR blocks (e.g. `10.0.0.0/16`)."
+
+}
+
+variable "ipv6_cidr_block" {
+  type        = string
+  description = "Base CIDR block which is divided into subnet CIDR blocks (e.g. `10.0.0.0/16`)."
+}
+
+variable "public_subnet_ids" {
   type        = list(string)
   default     = []
-  description = "The DNS servers to be used with vNet."
+  description = "A list of public subnet ids."
+  sensitive   = true
+
 }
 
-
-variable "enable_ddos_pp" {
-  type        = bool
-  default     = false
-  description = "Flag to control the resource creation"
-}
-
-variable "enable_network_watcher" {
-  type        = bool
-  default     = false
-  description = "Flag to control creation of network watcher."
-}
-
-variable "network_security_group_id" {
+variable "igw_id" {
   type        = string
-  default     = null
-  description = "Id of network security group for which flow are to be calculated"
+  default     = ""
+  description = "Internet Gateway ID that is used as a default route when creating public subnets (e.g. `igw-9c26a123`)."
+  sensitive   = true
 }
 
-variable "storage_account_id" {
+variable "az_ngw_ids" {
+  type        = map(string)
+  default     = {}
+  description = "Only for private subnets. Map of AZ names to NAT Gateway IDs that are used as default routes when creating private subnets."
+  sensitive   = true
+}
+
+variable "public_network_acl_id" {
   type        = string
-  default     = null
-  description = "Id of storage account."
+  default     = ""
+  description = "Network ACL ID that is added to the public subnets. If empty, a new ACL will be created."
+  sensitive   = true
 }
 
-variable "workspace_id" {
+variable "private_network_acl_id" {
   type        = string
-  default     = null
-  description = "Log analytics workspace id"
+  default     = ""
+  description = "Network ACL ID that is added to the private subnets. If empty, a new ACL will be created."
+  sensitive   = true
 }
 
-variable "workspace_resource_id" {
-  type        = string
-  default     = null
-  description = "Resource id of workspace"
-}
-
-variable "enable_flow_logs" {
-  type        = bool
-  default     = false
-  description = "Flag to control creation of flow logs for nsg."
-}
-
-variable "enable_traffic_analytics" {
+variable "enabled" {
   type        = bool
   default     = true
-  description = "Flag to control creation of traffic analytics."
+  description = "Set to false to prevent the module from creating any resources."
 }
-variable "retention_policy_enabled" {
+
+variable "enable_acl" {
   type        = bool
   default     = true
-  description = "Boolean flag to enable/disable retention."
+  description = "Set to false to prevent the module from creating any resources."
 }
-variable "retention_policy_days" {
+
+variable "nat_gateway_enabled" {
+  type        = bool
+  default     = false
+  description = "Flag to enable/disable NAT Gateways creation in public subnets."
+}
+
+variable "az_ngw_count" {
   type        = number
-  default     = 30
-  description = "The number of days to retain flow log records."
+  default     = 0
+  description = "Count of items in the `az_ngw_ids` map. Needs to be explicitly provided since Terraform currently can't use dynamic count on computed resources from different modules. https://github.com/hashicorp/terraform/issues/10857."
+}
+
+variable "enable_flow_log" {
+  type        = bool
+  default     = false
+  description = "Enable subnet_flow_log logs."
+}
+
+variable "map_public_ip_on_launch" {
+  type        = bool
+  default     = true
+  description = "Specify true to indicate that instances launched into the subnet should be assigned a public IP address."
+}
+
+#Module      : FLOW LOG
+#Description : Terraform flow log module variables.
+variable "s3_bucket_arn" {
+  type        = string
+  default     = ""
+  description = "S3 ARN for vpc logs."
+  sensitive   = true
+}
+
+variable "traffic_type" {
+  type        = string
+  default     = "ALL"
+  description = "Type of traffic to capture. Valid values: ACCEPT,REJECT, ALL."
+}
+
+variable "ipv6_cidrs" {
+  type        = list(any)
+  default     = []
+  description = "Subnet CIDR blocks (e.g. `2a05:d018:832:ca02::/64`)."
+}
+
+variable "ipv4_public_cidrs" {
+  type        = list(any)
+  default     = []
+  description = "Subnet CIDR blocks (e.g. `10.0.0.0/16`)."
+}
+variable "ipv4_private_cidrs" {
+  type        = list(any)
+  default     = []
+  description = "Subnet CIDR blocks (e.g. `10.0.0.0/16`)."
+}
+
+variable "single_nat_gateway" {
+  type    = bool
+  default = false
+}
+
+variable "assign_ipv6_address_on_creation" {
+  type        = bool
+  default     = false
+  description = "Specify true to indicate that network interfaces created in the specified subnet should be assigned an IPv6 address."
 }
