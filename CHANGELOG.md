@@ -4,35 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.5] - 2023-05-05
-### :white_check_mark: Tests
-- [`b46cf3c`](https://github.com/clouddrove/test-caller/commit/b46cf3cf1d05a59845ce48362f48d3f848b2a72a) - updated random in main.tf *(commit by [@nileshgadgi](https://github.com/nileshgadgi))*
-
-
-## [1.0.4] - 2023-05-05
-### :bug: Bug Fixes
-- [`775699b`](https://github.com/clouddrove/test-caller/commit/775699b820bbc4450528a5c4635f0bc23ce5d8de) - removed branch input *(commit by [@nileshgadgi](https://github.com/nileshgadgi))*
-
-
-## [1.0.3] - 2023-05-05
-### :bug: Bug Fixes
-- [`1d2deec`](https://github.com/clouddrove/test-caller/commit/1d2deec4a03a465d3e6cfa49cae98a509f13c7a3) - used secrets inherit while calling workflow *(commit by [@nileshgadgi](https://github.com/nileshgadgi))*
-
-
-## [1.0.1] - 2023-05-04
-### :bug: Bug Fixes
-- [`8a9e592`](https://github.com/clouddrove/terraform-azure-databricks/commit/8a9e592b0e8b6c5acebcb8c4bc7b1eed46da9bf8) - Updated naming format of cluster *(commit by [@nileshgadgi](https://github.com/nileshgadgi))*
-
-
-## [1.0.0] - 2023-02-09
+## [1.0.1] - 2023-03-28
 ### :sparkles: New Features
-- [`a722bb7`](https://github.com/clouddrove/terraform-azure-databricks/commit/a722bb7e85699d8a643e1ec92dd2ea64f564e736) - Added Terraform Azure Databricks Module
-### :bug: Bug Fixes
-- [`1c899c5`](https://github.com/clouddrove/terraform-azure-databricks/commit/1c899c5b3c909499b180bffc20f8caf2ab2bb4ee) - Update outputs.tf
-- [`fc67cfe`](https://github.com/clouddrove/terraform-azure-databricks/commit/fc67cfe1e96f5b602517829c9d3ef79570c826a2) - Configured autoscale feature in cluster
-- [`ca76e8f`](https://github.com/clouddrove/terraform-azure-databricks/commit/ca76e8f7e454cfcbfd75b142624da1e35c0ff1d8) - Added the spark version variable
+- [`d5a0ada`](https://github.com/clouddrove/terraform-azure-vnet/commit/4e669df6b4fbd6c2a490af5fe54f8b24d9c20ed6) - Added network flow logs for vnet
 
-[1.0.1]: https://github.com/clouddrove/terraform-azure-databricks/compare/1.0.0...1.0.1
-[1.0.3]: https://github.com/clouddrove/test-caller/compare/1.0.2...1.0.3
-[1.0.4]: https://github.com/clouddrove/test-caller/compare/1.0.3...1.0.4
-[1.0.5]: https://github.com/clouddrove/test-caller/compare/1.0.4...1.0.5
+## [1.0.0] - 2022-12-28
+### :sparkles: New Features
+- [`4e669df`](https://github.com/clouddrove/terraform-azure-vnet/commit/d5a0adab067641df278084b8a5f5add94014a9c7) - Added Terraform Azure Vnet Module.
+
+
+
+[1.0.0]: https://github.com/clouddrove/terraform-azure-vnet/compare/1.0.0...master
+[1.0.1]: https://github.com/clouddrove/terraform-azure-vnet/compare/1.0.0...1.0.1

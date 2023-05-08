@@ -1,7 +1,9 @@
-## Managed By : CloudDrove
-## Copyright @ CloudDrove. All Right Reserved.
+locals {
+  ddos_pp_id = var.enable_ddos_pp ? azurerm_network_ddos_protection_plan.example[0].id : ""
+}
 
 module "labels" {
+
   source  = "clouddrove/labels/azure"
   version = "1.0.0"
 
@@ -12,73 +14,62 @@ module "labels" {
   repository  = var.repository
 }
 
-resource "azurerm_databricks_workspace" "main" {
-
-  count                                 = var.enable == true ? 1 : 0
-  name                                  = format("%s-databricks", module.labels.id)
-  resource_group_name                   = var.resource_group_name
-  location                              = var.location
-  sku                                   = var.sku
-  network_security_group_rules_required = var.network_security_group_rules_required
-  public_network_access_enabled         = var.public_network_access_enabled
-  managed_resource_group_name           = var.managed_resource_group_name
-
-  custom_parameters {
-    virtual_network_id                                   = var.virtual_network_id
-    private_subnet_name                                  = var.private_subnet_name
-    public_subnet_name                                   = var.public_subnet_name
-    public_subnet_network_security_group_association_id  = var.public_subnet_network_security_group_association_id
-    private_subnet_network_security_group_association_id = var.private_subnet_network_security_group_association_id
-    no_public_ip                                         = var.no_public_ip
-    storage_account_name                                 = var.storage_account_name
-  }
-
-  depends_on = [
-    module.labels
-  ]
-}
-
-data "databricks_node_type" "smallest" {
-  local_disk = true
-
-  depends_on = [
-    azurerm_databricks_workspace.main
-  ]
-}
-
-data "databricks_spark_version" "latest_lts" {
-  long_term_support = true
-
-  depends_on = [
-    azurerm_databricks_workspace.main
-  ]
-}
-
-resource "databricks_cluster" "cluster" {
-  count        = var.cluster_enable == true ? 1 : 0
-  cluster_name = format("%s-cluster", module.labels.id)
-
-  spark_version = var.spark_version != null ? var.spark_version : data.databricks_spark_version.latest_lts.id
-  node_type_id  = data.databricks_node_type.smallest.id
-  num_workers   = var.enable_autoscale == true ? 0 : var.num_workers
-
-  autotermination_minutes = var.autotermination_minutes
-
-  dynamic "autoscale" {
-    for_each = var.enable_autoscale == true ? [1] : [0]
-
+resource "azurerm_virtual_network" "vnet" {
+  count                   = var.enable == true ? 1 : 0
+  name                    = format("%s-vnet", module.labels.id)
+  resource_group_name     = var.resource_group_name
+  location                = var.location
+  address_space           = length(var.address_spaces) == 0 ? [var.address_space] : var.address_spaces
+  dns_servers             = var.dns_servers
+  bgp_community           = var.bgp_community
+  edge_zone               = var.edge_zone
+  flow_timeout_in_minutes = var.flow_timeout_in_minutes
+  dynamic "ddos_protection_plan" {
+    for_each = local.ddos_pp_id != "" ? ["ddos_protection_plan"] : []
     content {
-      min_workers = var.min_workers
-      max_workers = var.max_workers
+      id     = local.ddos_pp_id
+      enable = true
     }
   }
+  tags = module.labels.tags
+}
 
-  spark_conf = {
-    "spark.databricks.cluster.profile" : var.cluster_profile
-    "spark.master" : "local[*]"
+resource "azurerm_network_ddos_protection_plan" "example" {
+  count               = var.enable_ddos_pp && var.enable == true ? 1 : 0
+  name                = format("%s-ddospp", module.labels.id)
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = module.labels.tags
+}
+
+resource "azurerm_network_watcher" "test" {
+  count               = var.enable_network_watcher ? 1 : 0
+  name                = format("%s-network_watcher", module.labels.id)
+  location            = var.location
+  resource_group_name = var.resource_group_name
+}
+
+
+resource "azurerm_network_watcher_flow_log" "test" {
+  count                = var.enable_flow_logs ? 1 : 0
+  network_watcher_name = join("", azurerm_network_watcher.test.*.name)
+  resource_group_name  = var.resource_group_name
+  name                 = format("%s-flow_logs", module.labels.id)
+
+  network_security_group_id = var.network_security_group_id
+  storage_account_id        = var.storage_account_id
+  enabled                   = true
+
+  retention_policy {
+    enabled = var.retention_policy_enabled
+    days    = var.retention_policy_days
   }
 
-  depends_on = [
-    azurerm_databricks_workspace.main
-  ]
+  traffic_analytics {
+    enabled               = var.enable_traffic_analytics
+    workspace_id          = var.workspace_id
+    workspace_region      = var.location
+    workspace_resource_id = var.workspace_resource_id
+    interval_in_minutes   = 10
+  }
 }

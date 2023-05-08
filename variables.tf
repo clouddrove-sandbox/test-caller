@@ -1,9 +1,21 @@
 #Module      : LABEL
-#Description : Terraform label module variable
+#Description : Terraform label module variables.
 variable "name" {
   type        = string
   default     = ""
   description = "Name  (e.g. `app` or `cluster`)."
+}
+
+variable "repository" {
+  type        = string
+  default     = "https://github.com/clouddrove/terraform-azure-virtual-network"
+  description = "Terraform current module repo"
+
+  validation {
+    # regex(...) fails if it cannot find a match
+    condition     = can(regex("^https://", var.repository))
+    error_message = "The module-repo value must be a valid Git repo link."
+  }
 }
 
 variable "environment" {
@@ -12,28 +24,40 @@ variable "environment" {
   description = "Environment (e.g. `prod`, `dev`, `staging`)."
 }
 
-variable "repository" {
+variable "label_order" {
+  type        = list(any)
+  default     = ["name", "environment"]
+  description = "Label order, e.g. `name`,`application`."
+}
+
+variable "attributes" {
+  type        = list(any)
+  default     = []
+  description = "Additional attributes (e.g. `1`)."
+}
+
+variable "delimiter" {
   type        = string
-  default     = ""
-  description = "Terraform current module repo"
+  default     = "-"
+  description = "Delimiter to be used between `organization`, `environment`, `name` and `attributes`."
+}
+
+variable "tags" {
+  type        = map(any)
+  default     = {}
+  description = "Additional tags (e.g. map(`BusinessUnit`,`XYZ`)."
 }
 
 variable "managedby" {
   type        = string
-  default     = ""
-  description = "Managed By e.g. Clouddrove , Anmol Nagpal"
-}
-
-variable "label_order" {
-  type        = list(any)
-  default     = []
-  description = "Label order, e.g. sequence of application name and environment `name`,`environment`,'attribute' [`webserver`,`qa`,`devops`,`public`,] ."
+  default     = "hello@clouddrove.com"
+  description = "ManagedBy, eg 'CloudDrove'."
 }
 
 variable "enable" {
   type        = bool
-  default     = false
-  description = "Set to false to prevent the module from creating any resources."
+  default     = true
+  description = "Flag to control the module creation"
 }
 
 variable "resource_group_name" {
@@ -48,112 +72,95 @@ variable "location" {
   description = "The location/region where the virtual network is created. Changing this forces a new resource to be created."
 }
 
-variable "sku" {
+variable "address_space" {
   type        = string
   default     = ""
-  description = "The sku to use for the Databricks Workspace. Possible values are standard, premium, or trial."
+  description = "The address space that is used by the virtual network."
 }
 
-variable "network_security_group_rules_required" {
-  type        = string
-  default     = ""
-  description = "Does the data plane (clusters) to control plane communication happen over private link endpoint only or publicly? Possible values AllRules, NoAzureDatabricksRules or NoAzureServiceRules. Required when public_network_access_enabled is set to false."
+variable "address_spaces" {
+  type        = list(string)
+  default     = []
+  description = "The list of the address spaces that is used by the virtual network."
 }
-
-variable "public_network_access_enabled" {
-  type        = bool
-  description = "Set to false to disable public Network access to the databricks."
-}
-
-variable "managed_resource_group_name" {
-  type        = string
-  default     = ""
-  description = "Managed Resource Group name to create Resource group by provided name."
-}
-
-variable "virtual_network_id" {
-  type        = string
-  default     = ""
-  description = "Id of the Virtual Network to attach with databricks."
-}
-
-variable "private_subnet_name" {
-  type        = string
-  default     = ""
-  description = "Private Subnet Name to attach with databricks."
-}
-
-variable "public_subnet_name" {
-  type        = string
-  default     = ""
-  description = "Public Subnet Name to attach with databricks."
-}
-
-variable "public_subnet_network_security_group_association_id" {
-  type        = string
-  default     = ""
-  description = "Public subnet Network security group association ID of the Virtual Network to attach with databricks."
-}
-
-variable "private_subnet_network_security_group_association_id" {
-  type        = string
-  default     = ""
-  description = "Private subnet Network security group association ID of the Virtual Network to attach with databricks."
-}
-
-variable "no_public_ip" {
-  type        = string
-  default     = ""
-  description = "Select true to disble public IP."
-}
-
-variable "storage_account_name" {
-  type        = string
-  default     = ""
-  description = "Storage account name to attach with databricks."
-}
-
-variable "cluster_enable" {
-  type        = bool
-  default     = false
-  description = "Set to false to prevent the databricks cluster from creating it's resources."
-}
-
-variable "autotermination_minutes" {
+variable "bgp_community" {
   type        = number
-  description = "Set a minutes to auto terminate cluster if it's unhealthy."
+  default     = null
+  description = "The BGP community attribute in format <as-number>:<community-value>."
 }
-
-variable "num_workers" {
-  type        = number
-  default     = 0
-  description = "Set a Ammount of workers that needs to be created among with Databricks Cluster."
-}
-
-variable "enable_autoscale" {
-  type        = bool
-  default     = false
-  description = "Set to false to not enable the Autoscale feature from the cluster."
-}
-
-variable "min_workers" {
-  type        = number
-  description = "Set a Ammount of minimum workers that needs to be created among with Databricks Cluster."
-}
-
-variable "max_workers" {
-  type        = number
-  description = "Set a Ammount of maximum workers that needs to be created among with Databricks Cluster."
-}
-
-variable "cluster_profile" {
-  type        = string
-  default     = ""
-  description = "The profile that Cluster will be contain. Possible values are 'singleNode' and 'multiNode'"
-}
-
-variable "spark_version" {
+variable "edge_zone" {
   type        = string
   default     = null
-  description = "Enter the Spark version to to create the Databricks's Cluster."
+  description = " (Optional) Specifies the Edge Zone within the Azure Region where this Virtual Network should exist. Changing this forces a new Virtual Network to be created."
+}
+variable "flow_timeout_in_minutes" {
+  type        = number
+  default     = 10
+  description = "The flow timeout in minutes for the Virtual Network, which is used to enable connection tracking for intra-VM flows. Possible values are between 4 and 30 minutes."
+}
+
+# If no values specified, this defaults to Azure DNS
+variable "dns_servers" {
+  type        = list(string)
+  default     = []
+  description = "The DNS servers to be used with vNet."
+}
+
+
+variable "enable_ddos_pp" {
+  type        = bool
+  default     = false
+  description = "Flag to control the resource creation"
+}
+
+variable "enable_network_watcher" {
+  type        = bool
+  default     = false
+  description = "Flag to control creation of network watcher."
+}
+
+variable "network_security_group_id" {
+  type        = string
+  default     = null
+  description = "Id of network security group for which flow are to be calculated"
+}
+
+variable "storage_account_id" {
+  type        = string
+  default     = null
+  description = "Id of storage account."
+}
+
+variable "workspace_id" {
+  type        = string
+  default     = null
+  description = "Log analytics workspace id"
+}
+
+variable "workspace_resource_id" {
+  type        = string
+  default     = null
+  description = "Resource id of workspace"
+}
+
+variable "enable_flow_logs" {
+  type        = bool
+  default     = false
+  description = "Flag to control creation of flow logs for nsg."
+}
+
+variable "enable_traffic_analytics" {
+  type        = bool
+  default     = true
+  description = "Flag to control creation of traffic analytics."
+}
+variable "retention_policy_enabled" {
+  type        = bool
+  default     = true
+  description = "Boolean flag to enable/disable retention."
+}
+variable "retention_policy_days" {
+  type        = number
+  default     = 30
+  description = "The number of days to retain flow log records."
 }

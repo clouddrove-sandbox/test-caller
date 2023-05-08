@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.3.0"
+  required_version = ">= 1.0.0"
 }
 
 terraform {
@@ -7,10 +7,6 @@ terraform {
     azurerm = {
       source  = "hashicorp/azurerm"
       version = ">=2.90.0"
-    }
-    databricks = {
-      source  = "databricks/databricks"
-      version = "1.14.3"
     }
   }
 }
