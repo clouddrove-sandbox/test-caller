@@ -10,6 +10,5 @@ on:
 jobs:
   call-workflow-changelog:
     uses: clouddrove/github-shared-workflows/.github/workflows/changelog.yml@master
-    secrets: inherit
     with:
       branch: 'master'

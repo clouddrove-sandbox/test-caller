@@ -10,10 +10,18 @@ updates:
     schedule:
       interval: "weekly"
   - package-ecosystem: "terraform" # See documentation for possible values
-    directory: "_example/default" # Location of package manifests
+    directory: "_example/private-subnet" # Location of package manifests
     schedule:
       interval: "weekly"
   - package-ecosystem: "terraform" # See documentation for possible values
-    directory: "_example/vnet-with-flow-logs" # Location of package manifests
-    schedule:
-      interval: "weekly"
+      directory: "_example/public-private-subnet" # Location of package manifests
+      schedule:
+        interval: "weekly"
+  - package-ecosystem: "terraform" # See documentation for possible values
+      directory: "_example/public-private-subnet-single-nat-gateway" # Location of package manifests
+      schedule:
+        interval: "weekly"
+  - package-ecosystem: "terraform" # See documentation for possible values
+      directory: "_example/public-subnet" # Location of package manifests
+      schedule:
+        interval: "weekly"
