@@ -1,3 +1,5 @@
+
+
 ---
 #
 # This is the canonical configuration for the `README.md`
@@ -6,13 +8,13 @@
 
 
 # Name of this project
-name: Terraform AZURE VIRTUAL-NETWORK
+name: Terraform AZURE CONTAINER REGISTRY (ACR)
 
 # License of this project
 license: "APACHE"
 
 # Canonical GitHub repo
-github_repo: clouddrove/terraform-azure-vnet
+github_repo: clouddrove/terraform-azure-acr
 
 # Badges to display
 badges:
@@ -25,8 +27,7 @@ badges:
 
 #  description of this project
 description: |-
-  Terraform module to create VIRTUAL-NETWORK resource on AZURE.
-
+  Terraform module to create acr resource on AZURE.
 # extra content
 include:
   - "terraform.md"
@@ -37,33 +38,28 @@ usage: |-
   ### Simple Example
   Here is an example of how you can use this module in your inventory structure:
   ```hcl
-  module "virtual-network" {
-   source              = "clouddrove/vnet/azure"
-   name                = "app"
-   environment         = "test"
-   label_order         = ["name", "environment"]
-   resource_group_name = module.resource_group.resource_group_name
-   location            = module.resource_group.resource_group_location
-   address_space       = "10.0.0.0/16"
-   }
-    ```
-  ##vnet with flow log
-  ```hcl
-  module "virtual-network" {
-   source              = "clouddrove/vnet/azure"
-   name                = "app"
-   environment         = "test"
-   label_order         = ["name", "environment"]
-   resource_group_name = module.resource_group.resource_group_name
-   location            = module.resource_group.resource_group_location
-   address_space       = "10.0.0.0/16"
-   ## For enabling network flow logs for vnet.
-   enable_flow_logs          = true
-   enable_network_watcher    = true
-   enable_traffic_analytics  = true
-   network_security_group_id = module.security_group.id
-   storage_account_id        = module.storage.default_storage_account_id
-   workspace_id              = module.log-analytics.workspace_customer_id
-   workspace_resource_id     = module.log-analytics.workspace_id
-   }
+    module "container-registry" {
+        source               = "clouddrove/acr/azure"
+        resource_group_name  = module.resource_group.resource_group_name
+        location             = module.resource_group.resource_group_location
+        container_registry_config = {
+        name                          = "containerregistrydemoproject01"
+        admin_enabled                 = true
+        sku                           = "Premium"
+        public_network_access_enabled = false
+      }
+
+      retention_policy = {
+        days    = 10
+        enabled = true
+      }
+      enable_content_trust          = true
+      enable_private_endpoint       = true
+      virtual_network_name          = module.vnet.vnet_name
+      virtual_network_id            = join("", module.vnet.vnet_id)
+      subnet_id                     = module.name_specific_subnet.specific_subnet_id
+      private_subnet_address_prefix = module.name_specific_subnet.specific_subnet_address_prefixes
+      private_dns_name              = "privatelink.azurecr.io" # To be same for all ACR.
+    }
+ 
     ```

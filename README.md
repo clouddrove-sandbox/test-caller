@@ -4,11 +4,13 @@
 
 
 <h1 align="center">
-    Terraform AZURE VIRTUAL-NETWORK
+    Terraform AZURE CONTAINER REGISTRY (ACR)
+
+
 </h1>
 
 <p align="center" style="font-size: 1.2rem;"> 
-    Terraform module to create VIRTUAL-NETWORK resource on AZURE.
+    Terraform module to create acr resource on AZURE.
      </p>
 
 <p align="center">
@@ -24,13 +26,13 @@
 </p>
 <p align="center">
 
-<a href='https://facebook.com/sharer/sharer.php?u=https://github.com/clouddrove/terraform-azure-vnet'>
+<a href='https://facebook.com/sharer/sharer.php?u=https://github.com/clouddrove/terraform-azure-acr'>
   <img title="Share on Facebook" src="https://user-images.githubusercontent.com/50652676/62817743-4f64cb80-bb59-11e9-90c7-b057252ded50.png" />
 </a>
-<a href='https://www.linkedin.com/shareArticle?mini=true&title=Terraform+AZURE+VIRTUAL-NETWORK&url=https://github.com/clouddrove/terraform-azure-vnet'>
+<a href='https://www.linkedin.com/shareArticle?mini=true&title=Terraform+AZURE+CONTAINER+REGISTRY+(ACR)&url=https://github.com/clouddrove/terraform-azure-acr'>
   <img title="Share on LinkedIn" src="https://user-images.githubusercontent.com/50652676/62817742-4e339e80-bb59-11e9-87b9-a1f68cae1049.png" />
 </a>
-<a href='https://twitter.com/intent/tweet/?text=Terraform+AZURE+VIRTUAL-NETWORK&url=https://github.com/clouddrove/terraform-azure-vnet'>
+<a href='https://twitter.com/intent/tweet/?text=Terraform+AZURE+CONTAINER+REGISTRY+(ACR)&url=https://github.com/clouddrove/terraform-azure-acr'>
   <img title="Share on Twitter" src="https://user-images.githubusercontent.com/50652676/62817740-4c69db00-bb59-11e9-8a79-3580fbbf6d5c.png" />
 </a>
 
@@ -65,41 +67,36 @@ This module has a few dependencies:
 ## Examples
 
 
-**IMPORTANT:** Since the `master` branch used in `source` varies based on new modifications, we suggest that you use the release versions [here](https://github.com/clouddrove/terraform-azure-vnet/releases).
+**IMPORTANT:** Since the `master` branch used in `source` varies based on new modifications, we suggest that you use the release versions [here](https://github.com/clouddrove/terraform-azure-acr/releases).
 
 
 ### Simple Example
 Here is an example of how you can use this module in your inventory structure:
 ```hcl
-module "virtual-network" {
- source              = "clouddrove/vnet/azure"
- name                = "app"
- environment         = "test"
- label_order         = ["name", "environment"]
- resource_group_name = module.resource_group.resource_group_name
- location            = module.resource_group.resource_group_location
- address_space       = "10.0.0.0/16"
- }
-  ```
-##vnet with flow log
-```hcl
-module "virtual-network" {
- source              = "clouddrove/vnet/azure"
- name                = "app"
- environment         = "test"
- label_order         = ["name", "environment"]
- resource_group_name = module.resource_group.resource_group_name
- location            = module.resource_group.resource_group_location
- address_space       = "10.0.0.0/16"
- ## For enabling network flow logs for vnet.
- enable_flow_logs          = true
- enable_network_watcher    = true
- enable_traffic_analytics  = true
- network_security_group_id = module.security_group.id
- storage_account_id        = module.storage.default_storage_account_id
- workspace_id              = module.log-analytics.workspace_customer_id
- workspace_resource_id     = module.log-analytics.workspace_id
- }
+  module "container-registry" {
+      source               = "clouddrove/acr/azure"
+      resource_group_name  = module.resource_group.resource_group_name
+      location             = module.resource_group.resource_group_location
+      container_registry_config = {
+      name                          = "containerregistrydemoproject01"
+      admin_enabled                 = true
+      sku                           = "Premium"
+      public_network_access_enabled = false
+    }
+
+    retention_policy = {
+      days    = 10
+      enabled = true
+    }
+    enable_content_trust          = true
+    enable_private_endpoint       = true
+    virtual_network_name          = module.vnet.vnet_name
+    virtual_network_id            = join("", module.vnet.vnet_id)
+    subnet_id                     = module.name_specific_subnet.specific_subnet_id
+    private_subnet_address_prefix = module.name_specific_subnet.specific_subnet_address_prefixes
+    private_dns_name              = "privatelink.azurecr.io" # To be same for all ACR.
+  }
+
   ```
 
 
@@ -111,46 +108,55 @@ module "virtual-network" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| address\_space | The address space that is used by the virtual network. | `string` | `""` | no |
-| address\_spaces | The list of the address spaces that is used by the virtual network. | `list(string)` | `[]` | no |
-| attributes | Additional attributes (e.g. `1`). | `list(any)` | `[]` | no |
-| bgp\_community | The BGP community attribute in format <as-number>:<community-value>. | `number` | `null` | no |
-| delimiter | Delimiter to be used between `organization`, `environment`, `name` and `attributes`. | `string` | `"-"` | no |
-| dns\_servers | The DNS servers to be used with vNet. | `list(string)` | `[]` | no |
-| edge\_zone | (Optional) Specifies the Edge Zone within the Azure Region where this Virtual Network should exist. Changing this forces a new Virtual Network to be created. | `string` | `null` | no |
-| enable | Flag to control the module creation | `bool` | `true` | no |
-| enable\_ddos\_pp | Flag to control the resource creation | `bool` | `false` | no |
-| enable\_flow\_logs | Flag to control creation of flow logs for nsg. | `bool` | `false` | no |
-| enable\_network\_watcher | Flag to control creation of network watcher. | `bool` | `false` | no |
-| enable\_traffic\_analytics | Flag to control creation of traffic analytics. | `bool` | `true` | no |
+| acr\_diag\_logs | Application Gateway Monitoring Category details for Azure Diagnostic setting | `list` | <pre>[<br>  "ContainerRegistryRepositoryEvents",<br>  "ContainerRegistryLoginEvents"<br>]</pre> | no |
+| admin\_enabled | To enable of disable admin access | `bool` | `true` | no |
+| container\_registry\_config | Manages an Azure Container Registry | <pre>object({<br>    name                      = string<br>    sku                       = optional(string)<br>    quarantine_policy_enabled = optional(bool)<br>    zone_redundancy_enabled   = optional(bool)<br>  })</pre> | n/a | yes |
+| container\_registry\_webhooks | Manages an Azure Container Registry Webhook | <pre>map(object({<br>    service_uri    = string<br>    actions        = list(string)<br>    status         = optional(string)<br>    scope          = string<br>    custom_headers = map(string)<br>  }))</pre> | `null` | no |
+| enable\_content\_trust | Boolean value to enable or disable Content trust in Azure Container Registry | `bool` | `true` | no |
+| enable\_private\_endpoint | Manages a Private Endpoint to Azure Container Registry | `bool` | `true` | no |
+| encryption | Encrypt registry using a customer-managed key | <pre>object({<br>    key_vault_key_id   = string<br>    identity_client_id = string<br>  })</pre> | `null` | no |
 | environment | Environment (e.g. `prod`, `dev`, `staging`). | `string` | `""` | no |
-| flow\_timeout\_in\_minutes | The flow timeout in minutes for the Virtual Network, which is used to enable connection tracking for intra-VM flows. Possible values are between 4 and 30 minutes. | `number` | `10` | no |
-| label\_order | Label order, e.g. `name`,`application`. | `list(any)` | `[]` | no |
-| location | The location/region where the virtual network is created. Changing this forces a new resource to be created. | `string` | `""` | no |
-| managedby | ManagedBy, eg 'CloudDrove'. | `string` | `"hello@clouddrove.com"` | no |
+| existing\_private\_dns\_zone | Name of the existing private DNS zone | `any` | `null` | no |
+| georeplications | A list of Azure locations where the container registry should be geo-replicated | <pre>list(object({<br>    location                = string<br>    zone_redundancy_enabled = optional(bool)<br>  }))</pre> | `[]` | no |
+| identity\_ids | Specifies a list of user managed identity ids to be assigned. This is required when `type` is set to `UserAssigned` or `SystemAssigned, UserAssigned` | `any` | `null` | no |
+| label\_order | Label order, e.g. sequence of application name and environment `name`,`environment`,'attribute' [`webserver`,`qa`,`devops`,`public`,] . | `list(any)` | `[]` | no |
+| location | The location/region to keep all your network resources. To get the list of all locations with table format from azure cli, run 'az account list-locations -o table' | `string` | `""` | no |
+| log\_analytics\_workspace\_id | log\_analytics\_workspace\_id | `string` | `null` | no |
+| log\_analytics\_workspace\_name | The name of log analytics workspace name | `any` | `null` | no |
+| managedby | ManagedBy, eg ''. | `string` | `""` | no |
 | name | Name  (e.g. `app` or `cluster`). | `string` | `""` | no |
-| network\_security\_group\_id | Id of network security group for which flow are to be calculated | `string` | `null` | no |
-| repository | Terraform current module repo | `string` | `"https://github.com/clouddrove/terraform-azure-virtual-network"` | no |
-| resource\_group\_name | The name of the resource group in which to create the virtual network. Changing this forces a new resource to be created. | `string` | `""` | no |
-| retention\_policy\_days | The number of days to retain flow log records. | `number` | `30` | no |
-| retention\_policy\_enabled | Boolean flag to enable/disable retention. | `bool` | `true` | no |
-| storage\_account\_id | Id of storage account. | `string` | `null` | no |
-| tags | Additional tags (e.g. map(`BusinessUnit`,`XYZ`). | `map(any)` | `{}` | no |
-| workspace\_id | Log analytics workspace id | `string` | `null` | no |
-| workspace\_resource\_id | Resource id of workspace | `string` | `null` | no |
+| network\_rule\_set | Manage network rules for Azure Container Registries | <pre>object({<br>    default_action = optional(string)<br>    ip_rule = optional(list(object({<br>      ip_range = string<br>    })))<br>    virtual_network = optional(list(object({<br>      subnet_id = string<br>    })))<br>  })</pre> | `null` | no |
+| private\_dns\_name | n/a | `string` | `"privatelink.azurecr.io"` | no |
+| private\_dns\_zone\_vnet\_link\_registration\_enabled | (Optional) Is auto-registration of virtual machine records in the virtual network in the Private DNS zone enabled? | `bool` | `true` | no |
+| private\_subnet\_address\_prefix | The name of the subnet for private endpoints | `any` | `null` | no |
+| public\_network\_access\_enabled | To denied public access | `bool` | `false` | no |
+| repository | Terraform current module repo | `string` | `""` | no |
+| resource\_group\_name | A container that holds related resources for an Azure solution | `string` | `""` | no |
+| retention\_policy | Set a retention policy for untagged manifests | <pre>object({<br>    days    = optional(number)<br>    enabled = optional(bool)<br>  })</pre> | <pre>{<br>  "days": 10,<br>  "enabled": true<br>}</pre> | no |
+| scope\_map | Manages an Azure Container Registry scope map. Scope Maps are a preview feature only available in Premium SKU Container registries. | <pre>map(object({<br>    actions = list(string)<br>  }))</pre> | `null` | no |
+| storage\_account\_id | n/a | `string` | `null` | no |
+| storage\_account\_name | The name of the hub storage account to store logs | `any` | `null` | no |
+| subnet\_id | Subnet to be used for private endpoint | `list(string)` | `null` | no |
+| tags | A map of tags to add to all resources | `map(string)` | `{}` | no |
+| virtual\_network\_id | Virtual Network to be used for private endpoint | `string` | `null` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| ddos\_protection\_plan\_id | The ID of the DDoS Protection Plan |
-| network\_watcher\_id | The ID of the Network Watcher. |
-| vnet\_address\_space | The address space of the newly created vNet |
-| vnet\_guid | The GUID of the virtual network. |
-| vnet\_id | The id of the newly created vNet |
-| vnet\_location | The location of the newly created vNet |
-| vnet\_name | The name of the newly created vNet |
-| vnet\_rg\_name | The name of the resource group in which to create the virtual network. Changing this forces a new resource to be created |
+| container\_registry\_admin\_password | The Username associated with the Container Registry Admin account - if the admin account is enabled. |
+| container\_registry\_admin\_username | The Username associated with the Container Registry Admin account - if the admin account is enabled. |
+| container\_registry\_id | The ID of the Container Registry |
+| container\_registry\_identity\_principal\_id | The Principal ID for the Service Principal associated with the Managed Service Identity of this Container Registry |
+| container\_registry\_identity\_tenant\_id | The Tenant ID for the Service Principal associated with the Managed Service Identity of this Container Registry |
+| container\_registry\_login\_server | The URL that can be used to log into the container registry |
+| container\_registry\_private\_dns\_zone\_domain | DNS zone name of Azure Container Registry Private endpoints dns name records |
+| container\_registry\_private\_endpoint | The ID of the Azure Container Registry Private Endpoint |
+| container\_registry\_private\_endpoint\_fqdn | Azure Container Registry private endpoint FQDN Addresses |
+| container\_registry\_private\_endpoint\_ip\_addresses | Azure Container Registry private endpoint IPv4 Addresses |
+| container\_registry\_scope\_map\_id | The ID of the Container Registry scope map |
+| container\_registry\_token\_id | The ID of the Container Registry token |
+| container\_registry\_webhook\_id | The ID of the Container Registry Webhook |
 
 
 
@@ -166,9 +172,9 @@ You need to run the following command in the testing folder:
 
 
 ## Feedback 
-If you come accross a bug or have any feedback, please log it in our [issue tracker](https://github.com/clouddrove/terraform-azure-vnet/issues), or feel free to drop us an email at [hello@clouddrove.com](mailto:hello@clouddrove.com).
+If you come accross a bug or have any feedback, please log it in our [issue tracker](https://github.com/clouddrove/terraform-azure-acr/issues), or feel free to drop us an email at [hello@clouddrove.com](mailto:hello@clouddrove.com).
 
-If you have found it worth your time, go ahead and give us a ★ on [our GitHub](https://github.com/clouddrove/terraform-azure-vnet)!
+If you have found it worth your time, go ahead and give us a ★ on [our GitHub](https://github.com/clouddrove/terraform-azure-acr)!
 
 ## About us
 
