@@ -10,4 +10,3 @@ jobs:
     secrets: inherit
     with:
       working_directory: '.'
-      
