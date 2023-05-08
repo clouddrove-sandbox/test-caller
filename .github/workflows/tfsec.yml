@@ -5,7 +5,7 @@ on:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 jobs:
-  call-workflow-tfsec:
+  tfsec:
     uses: clouddrove/github-shared-workflows/.github/workflows/tfsec.yml@master
     secrets: inherit
     with:
