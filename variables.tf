@@ -1,21 +1,142 @@
-#Module      : LABEL
-#Description : Terraform label module variables.
+variable "resource_group_name" {
+  description = "A container that holds related resources for an Azure solution"
+  default     = ""
+}
+
+variable "location" {
+  description = "The location/region to keep all your network resources. To get the list of all locations with table format from azure cli, run 'az account list-locations -o table'"
+  default     = ""
+}
+
+variable "container_registry_config" {
+  description = "Manages an Azure Container Registry"
+  type = object({
+    name                      = string
+    sku                       = optional(string)
+    quarantine_policy_enabled = optional(bool)
+    zone_redundancy_enabled   = optional(bool)
+  })
+}
+
+variable "georeplications" {
+  description = "A list of Azure locations where the container registry should be geo-replicated"
+  type = list(object({
+    location                = string
+    zone_redundancy_enabled = optional(bool)
+  }))
+  default = []
+}
+
+variable "network_rule_set" { # change this to match actual objects
+  description = "Manage network rules for Azure Container Registries"
+  type = object({
+    default_action = optional(string)
+    ip_rule = optional(list(object({
+      ip_range = string
+    })))
+    virtual_network = optional(list(object({
+      subnet_id = string
+    })))
+  })
+  default = null
+}
+
+variable "retention_policy" {
+  description = "Set a retention policy for untagged manifests"
+  type = object({
+    days    = optional(number)
+    enabled = optional(bool)
+  })
+  default = {
+    days    = 10
+    enabled = true
+  }
+}
+
+variable "enable_content_trust" {
+  description = "Boolean value to enable or disable Content trust in Azure Container Registry"
+  default     = true
+}
+
+variable "identity_ids" {
+  description = "Specifies a list of user managed identity ids to be assigned. This is required when `type` is set to `UserAssigned` or `SystemAssigned, UserAssigned`"
+  default     = null
+}
+
+variable "encryption" {
+  description = "Encrypt registry using a customer-managed key"
+  type = object({
+    key_vault_key_id   = string
+    identity_client_id = string
+  })
+  default = null
+}
+
+variable "scope_map" {
+  description = "Manages an Azure Container Registry scope map. Scope Maps are a preview feature only available in Premium SKU Container registries."
+  type = map(object({
+    actions = list(string)
+  }))
+  default = null
+}
+
+variable "container_registry_webhooks" {
+  description = "Manages an Azure Container Registry Webhook"
+  type = map(object({
+    service_uri    = string
+    actions        = list(string)
+    status         = optional(string)
+    scope          = string
+    custom_headers = map(string)
+  }))
+  default = null
+}
+
+variable "enable_private_endpoint" {
+  description = "Manages a Private Endpoint to Azure Container Registry"
+  default     = true
+}
+
+variable "existing_private_dns_zone" {
+  description = "Name of the existing private DNS zone"
+  default     = null
+}
+
+variable "private_subnet_address_prefix" {
+  description = "The name of the subnet for private endpoints"
+  default     = null
+}
+
+variable "log_analytics_workspace_name" {
+  description = "The name of log analytics workspace name"
+  default     = null
+}
+
+variable "storage_account_name" {
+  description = "The name of the hub storage account to store logs"
+  default     = null
+}
+
+variable "acr_diag_logs" {
+  description = "Application Gateway Monitoring Category details for Azure Diagnostic setting"
+  default     = ["ContainerRegistryRepositoryEvents", "ContainerRegistryLoginEvents"]
+}
+
+variable "tags" {
+  description = "A map of tags to add to all resources"
+  type        = map(string)
+  default     = {}
+}
+
+variable "private_dns_name" {
+  type    = string
+  default = "privatelink.azurecr.io"
+}
+
 variable "name" {
   type        = string
   default     = ""
   description = "Name  (e.g. `app` or `cluster`)."
-}
-
-variable "repository" {
-  type        = string
-  default     = "https://github.com/clouddrove/terraform-azure-virtual-network"
-  description = "Terraform current module repo"
-
-  validation {
-    # regex(...) fails if it cannot find a match
-    condition     = can(regex("^https://", var.repository))
-    error_message = "The module-repo value must be a valid Git repo link."
-  }
 }
 
 variable "environment" {
@@ -24,143 +145,61 @@ variable "environment" {
   description = "Environment (e.g. `prod`, `dev`, `staging`)."
 }
 
+variable "repository" {
+  type        = string
+  default     = ""
+  description = "Terraform current module repo"
+}
+
 variable "label_order" {
   type        = list(any)
-  default     = ["name", "environment"]
-  description = "Label order, e.g. `name`,`application`."
-}
-
-variable "attributes" {
-  type        = list(any)
   default     = []
-  description = "Additional attributes (e.g. `1`)."
-}
-
-variable "delimiter" {
-  type        = string
-  default     = "-"
-  description = "Delimiter to be used between `organization`, `environment`, `name` and `attributes`."
-}
-
-variable "tags" {
-  type        = map(any)
-  default     = {}
-  description = "Additional tags (e.g. map(`BusinessUnit`,`XYZ`)."
+  description = "Label order, e.g. sequence of application name and environment `name`,`environment`,'attribute' [`webserver`,`qa`,`devops`,`public`,] ."
 }
 
 variable "managedby" {
   type        = string
-  default     = "hello@clouddrove.com"
-  description = "ManagedBy, eg 'CloudDrove'."
-}
-
-variable "enable" {
-  type        = bool
-  default     = true
-  description = "Flag to control the module creation"
-}
-
-variable "resource_group_name" {
-  type        = string
   default     = ""
-  description = "The name of the resource group in which to create the virtual network. Changing this forces a new resource to be created."
+  description = "ManagedBy, eg ''."
 }
 
-variable "location" {
-  type        = string
-  default     = ""
-  description = "The location/region where the virtual network is created. Changing this forces a new resource to be created."
-}
-
-variable "address_space" {
-  type        = string
-  default     = ""
-  description = "The address space that is used by the virtual network."
-}
-
-variable "address_spaces" {
+variable "subnet_id" {
   type        = list(string)
-  default     = []
-  description = "The list of the address spaces that is used by the virtual network."
-}
-variable "bgp_community" {
-  type        = number
   default     = null
-  description = "The BGP community attribute in format <as-number>:<community-value>."
+  description = "Subnet to be used for private endpoint"
 }
-variable "edge_zone" {
+
+variable "virtual_network_id" {
   type        = string
   default     = null
-  description = " (Optional) Specifies the Edge Zone within the Azure Region where this Virtual Network should exist. Changing this forces a new Virtual Network to be created."
-}
-variable "flow_timeout_in_minutes" {
-  type        = number
-  default     = 10
-  description = "The flow timeout in minutes for the Virtual Network, which is used to enable connection tracking for intra-VM flows. Possible values are between 4 and 30 minutes."
+  description = "Virtual Network to be used for private endpoint"
 }
 
-# If no values specified, this defaults to Azure DNS
-variable "dns_servers" {
-  type        = list(string)
-  default     = []
-  description = "The DNS servers to be used with vNet."
-}
-
-
-variable "enable_ddos_pp" {
-  type        = bool
-  default     = false
-  description = "Flag to control the resource creation"
-}
-
-variable "enable_network_watcher" {
-  type        = bool
-  default     = false
-  description = "Flag to control creation of network watcher."
-}
-
-variable "network_security_group_id" {
+variable "log_analytics_workspace_id" {
   type        = string
   default     = null
-  description = "Id of network security group for which flow are to be calculated"
+  description = "log_analytics_workspace_id"
 }
 
 variable "storage_account_id" {
-  type        = string
-  default     = null
-  description = "Id of storage account."
+  type    = string
+  default = null
 }
 
-variable "workspace_id" {
-  type        = string
-  default     = null
-  description = "Log analytics workspace id"
+variable "private_dns_zone_vnet_link_registration_enabled" {
+  type        = bool
+  default     = true
+  description = "(Optional) Is auto-registration of virtual machine records in the virtual network in the Private DNS zone enabled?"
 }
 
-variable "workspace_resource_id" {
-  type        = string
-  default     = null
-  description = "Resource id of workspace"
-}
-
-variable "enable_flow_logs" {
+variable "public_network_access_enabled" {
   type        = bool
   default     = false
-  description = "Flag to control creation of flow logs for nsg."
+  description = "To denied public access "
 }
 
-variable "enable_traffic_analytics" {
+variable "admin_enabled" {
   type        = bool
   default     = true
-  description = "Flag to control creation of traffic analytics."
-}
-variable "retention_policy_enabled" {
-  type        = bool
-  default     = true
-  description = "Boolean flag to enable/disable retention."
-}
-variable "retention_policy_days" {
-  type        = number
-  default     = 30
-  description = "The number of days to retain flow log records."
+  description = "To enable of disable admin access"
 }
