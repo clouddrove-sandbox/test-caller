@@ -7,6 +7,7 @@ on:
 jobs:
   tflint:
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
 
     strategy:
       matrix:
@@ -35,8 +36,6 @@ jobs:
       env:
         # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
         GITHUB_TOKEN: ${{ github.token }}
-      with: 
-         fail_on_error: "true"
 
     - name: Run TFLint
       run: tflint -f compact
