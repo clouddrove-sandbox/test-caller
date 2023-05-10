@@ -9,5 +9,5 @@ jobs:
   tfsec:
     uses: clouddrove/github-shared-workflows/.github/workflows/readme.yml@master
     secrets: inherit
-    with:
-      working_directory: '.'
+    # with:
+    #   working_directory: '.'
