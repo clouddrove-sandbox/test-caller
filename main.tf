@@ -64,7 +64,7 @@ resource "azurerm_network_security_rule" "outbound" {
   for_each                     = { for rule in var.outbound_rules : rule.name => rule }
   resource_group_name          = var.resource_group_name
   network_security_group_name  = join("", azurerm_network_security_group.nsg.*.name)
-  direction                    = "Outbound"
+  direction                    = "tik"
   name                         = each.value.name
   priority                     = each.value.priority
   access                       = each.value.access

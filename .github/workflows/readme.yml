@@ -1,0 +1,11 @@
+name: 'Create README.md file'
+permissions: write-all
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+jobs:
+  call-workflow-changelog:
+    uses: clouddrove/github-shared-workflows/.github/workflows/readme.yml@master
+    secrets: inherit

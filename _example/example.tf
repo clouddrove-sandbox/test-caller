@@ -82,7 +82,7 @@ module "network_security_group" {
       #source_address_prefixes    = ["67.23.123.234/32","67.20.123.234/32"]
       source_port_range          = "*"
       destination_address_prefix = "0.0.0.0/0"
-      destination_port_range     = "434343424342"
+      destination_port_range     = "22"
       description                = "ssh allowed port"
     },
     {
