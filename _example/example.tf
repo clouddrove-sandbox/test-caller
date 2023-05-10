@@ -1,46 +1,43 @@
+# Azure Provider configuration
 provider "azurerm" {
   features {}
 }
 
 module "resource_group" {
-  source  = "clouddrove/resource-group/azure"
-  version = "1.0.2"
-
-  name        = "app"
+  source      = "clouddrove/resource-group/azure"
+  version     = "1.0.1"
+  label_order = ["name", "environment", ]
+  name        = "app-name"
   environment = "test"
-  label_order = ["environment", "name", ]
-  location    = "East US"
+  location    = "Canada Central"
 }
-#Vnet
+
 module "vnet" {
-  depends_on = [module.resource_group]
-  source     = "clouddrove/vnet/azure"
-  version    = "1.0.2"
+  depends_on  = [module.resource_group]
+  source      = "clouddrove/vnet/azure"
+  version     = "1.0.0"
+  label_order = ["name", "environment"]
 
   name                = "app"
   environment         = "test"
-  label_order         = ["name", "environment"]
   resource_group_name = module.resource_group.resource_group_name
   location            = module.resource_group.resource_group_location
-  address_space       = "10.0.0.0/16"
+  address_space       = "10.30.0.0/22"
+  enable_ddos_pp      = false
 }
 
 module "subnet" {
   source  = "clouddrove/subnet/azure"
   version = "1.0.2"
 
-  name                 = "app"
-  environment          = "test"
-  label_order          = ["name", "environment"]
+  name                 = "example-subnet"
   resource_group_name  = module.resource_group.resource_group_name
   location             = module.resource_group.resource_group_location
   virtual_network_name = join("", module.vnet.vnet_name)
 
-  #subnet
-  subnet_names    = ["subnet1"]
-  subnet_prefixes = ["10.0.0.0/20"]
-
-  # route_table
+  # Subnet Configuration
+  subnet_prefixes = ["10.30.0.0/24"]
+  # routes
   routes = [
     {
       name           = "rt-test"
@@ -48,20 +45,58 @@ module "subnet" {
       next_hop_type  = "Internet"
     }
   ]
+
 }
 
-module "container-registry" {
-  source              = "clouddrove/acr/azure"
-  resource_group_name = module.resource_group.resource_group_name
-  location            = module.resource_group.resource_group_location
+module "log-analytics" {
+  source                           = "clouddrove/log-analytics/azure"
+  version                          = "1.0.0"
+  name                             = "app1"
+  environment                      = "test1"
+  label_order                      = ["name", "environment"]
+  create_log_analytics_workspace   = true
+  log_analytics_workspace_sku      = "PerGB2018"
+  daily_quota_gb                   = "-1"
+  internet_ingestion_enabled       = true
+  internet_query_enabled           = true
+  resource_group_name              = module.resource_group.resource_group_name
+  log_analytics_workspace_location = module.resource_group.resource_group_location
+}
 
-  container_registry_config = {
-    name = "cdacr1234"
-    sku  = "Premium"
-  }
+module "network_security_group" {
+  depends_on              = [module.subnet]
+  resource_group_location = module.resource_group.resource_group_location
+  source                  = "../"
+  label_order             = ["name", "environment"]
+  name                    = "app"
+  environment             = "test"
+  subnet_ids              = module.subnet.default_subnet_id
+  resource_group_name     = module.resource_group.resource_group_name
+  inbound_rules = [
+    {
+      name                  = "ssh"
+      priority              = 101
+      access                = "Allow"
+      protocol              = "Tcp"
+      source_address_prefix = "67.23.123.234/32"
+      #source_address_prefixes    = ["67.23.123.234/32","67.20.123.234/32"]
+      source_port_range          = "*"
+      destination_address_prefix = "0.0.0.0/0"
+      destination_port_range     = "22"
+      description                = "ssh allowed port"
+    },
+    {
+      name                       = "https"
+      priority                   = 102
+      access                     = "Allow"
+      protocol                   = "*"
+      source_address_prefix      = "VirtualNetwork"
+      source_port_range          = "80,443"
+      destination_address_prefix = "0.0.0.0/0"
+      destination_port_range     = "22"
+      description                = "ssh allowed port"
+    }
+  ]
 
-  # to enable private endpoint. 
-  virtual_network_id            = join("", module.vnet.vnet_id)
-  subnet_id                     = module.subnet.default_subnet_id
-  private_subnet_address_prefix = module.subnet.default_subnet_address_prefixes
+  log_analytics_workspace_id = module.log-analytics.workspace_id
 }

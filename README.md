@@ -4,13 +4,13 @@
 
 
 <h1 align="center">
-    Terraform AZURE CONTAINER REGISTRY (ACR)
+    Terraform AZURE NETWORK SECURITY GROUP
 
 
 </h1>
 
 <p align="center" style="font-size: 1.2rem;"> 
-    Terraform module to create acr resource on AZURE.
+    Terraform module to create NETWORK SECURITY GROUP resource on AZURE.
      </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 <a href="https://www.terraform.io">
   <img src="https://img.shields.io/badge/Terraform-v1.0.0-green" alt="Terraform">
 </a>
-<a href="LICENSE.md">
+<a href="LICENSE">
   <img src="https://img.shields.io/badge/License-APACHE-blue.svg" alt="Licence">
 </a>
 
@@ -26,13 +26,13 @@
 </p>
 <p align="center">
 
-<a href='https://facebook.com/sharer/sharer.php?u=https://github.com/clouddrove/terraform-azure-acr'>
+<a href='https://facebook.com/sharer/sharer.php?u=https://github.com/clouddrove/terraform-azure-network-security-group'>
   <img title="Share on Facebook" src="https://user-images.githubusercontent.com/50652676/62817743-4f64cb80-bb59-11e9-90c7-b057252ded50.png" />
 </a>
-<a href='https://www.linkedin.com/shareArticle?mini=true&title=Terraform+AZURE+CONTAINER+REGISTRY+(ACR)&url=https://github.com/clouddrove/terraform-azure-acr'>
+<a href='https://www.linkedin.com/shareArticle?mini=true&title=Terraform+AZURE+NETWORK+SECURITY+GROUP&url=https://github.com/clouddrove/terraform-azure-network-security-group'>
   <img title="Share on LinkedIn" src="https://user-images.githubusercontent.com/50652676/62817742-4e339e80-bb59-11e9-87b9-a1f68cae1049.png" />
 </a>
-<a href='https://twitter.com/intent/tweet/?text=Terraform+AZURE+CONTAINER+REGISTRY+(ACR)&url=https://github.com/clouddrove/terraform-azure-acr'>
+<a href='https://twitter.com/intent/tweet/?text=Terraform+AZURE+NETWORK+SECURITY+GROUP&url=https://github.com/clouddrove/terraform-azure-network-security-group'>
   <img title="Share on Twitter" src="https://user-images.githubusercontent.com/50652676/62817740-4c69db00-bb59-11e9-8a79-3580fbbf6d5c.png" />
 </a>
 
@@ -67,36 +67,48 @@ This module has a few dependencies:
 ## Examples
 
 
-**IMPORTANT:** Since the `master` branch used in `source` varies based on new modifications, we suggest that you use the release versions [here](https://github.com/clouddrove/terraform-azure-acr/releases).
+**IMPORTANT:** Since the `master` branch used in `source` varies based on new modifications, we suggest that you use the release versions [here](https://github.com/clouddrove/terraform-azure-network-security-group/releases).
 
 
 ### Simple Example
 Here is an example of how you can use this module in your inventory structure:
-```hcl
-  module "container-registry" {
-      source               = "clouddrove/acr/azure"
-      resource_group_name  = module.resource_group.resource_group_name
-      location             = module.resource_group.resource_group_location
-      container_registry_config = {
-      name                          = "containerregistrydemoproject01"
-      admin_enabled                 = true
-      sku                           = "Premium"
-      public_network_access_enabled = false
-    }
-
-    retention_policy = {
-      days    = 10
-      enabled = true
-    }
-    enable_content_trust          = true
-    enable_private_endpoint       = true
-    virtual_network_name          = module.vnet.vnet_name
-    virtual_network_id            = join("", module.vnet.vnet_id)
-    subnet_id                     = module.name_specific_subnet.specific_subnet_id
-    private_subnet_address_prefix = module.name_specific_subnet.specific_subnet_address_prefixes
-    private_dns_name              = "privatelink.azurecr.io" # To be same for all ACR.
+  ```hcl
+   module "network_security_group" {
+    source                  = "clouddrove/subnet/network-security-group"
+    version                 = "1.0.0"
+    resource_group_location = module.resource_group.resource_group_location
+    source                  = "../"
+    label_order             = ["name", "environment"]
+    app_name                = "app"
+    environment             = "test"
+    subnet_ids              = module.subnet.default_subnet_id
+    resource_group_name     = module.resource_group.resource_group_name
+    inbound_rules = [
+    {
+      name                       = "ssh"
+      priority                   = 101
+      access                     = "Allow"
+      protocol                   = "Tcp"
+      source_address_prefix      = "67.23.123.234/32"
+      #source_address_prefixes    = ["67.23.123.234/32","67.20.123.234/32"]
+      source_port_range          = "*"
+      destination_address_prefix = "0.0.0.0/0"
+      destination_port_range     = "22"
+      description                = "ssh allowed port"
+    },
+    {
+      name                       = "https"
+      priority                   = 102
+      access                     = "Allow"
+      protocol                   = "*"
+      source_address_prefix      = "VirtualNetwork"
+      source_port_range          = "80,443"
+      destination_address_prefix = "0.0.0.0/0"
+      destination_port_range     = "22"
+      description                = "ssh allowed port"
+      }
+    ]
   }
-
   ```
 
 
@@ -108,55 +120,40 @@ Here is an example of how you can use this module in your inventory structure:
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| acr\_diag\_logs | Application Gateway Monitoring Category details for Azure Diagnostic setting | `list` | <pre>[<br>  "ContainerRegistryRepositoryEvents",<br>  "ContainerRegistryLoginEvents"<br>]</pre> | no |
-| admin\_enabled | To enable of disable admin access | `bool` | `true` | no |
-| container\_registry\_config | Manages an Azure Container Registry | <pre>object({<br>    name                      = string<br>    sku                       = optional(string)<br>    quarantine_policy_enabled = optional(bool)<br>    zone_redundancy_enabled   = optional(bool)<br>  })</pre> | n/a | yes |
-| container\_registry\_webhooks | Manages an Azure Container Registry Webhook | <pre>map(object({<br>    service_uri    = string<br>    actions        = list(string)<br>    status         = optional(string)<br>    scope          = string<br>    custom_headers = map(string)<br>  }))</pre> | `null` | no |
-| enable\_content\_trust | Boolean value to enable or disable Content trust in Azure Container Registry | `bool` | `true` | no |
-| enable\_private\_endpoint | Manages a Private Endpoint to Azure Container Registry | `bool` | `true` | no |
-| encryption | Encrypt registry using a customer-managed key | <pre>object({<br>    key_vault_key_id   = string<br>    identity_client_id = string<br>  })</pre> | `null` | no |
+| attributes | Additional attributes (e.g. `1`). | `list(string)` | `[]` | no |
+| business\_unit | Top-level division of your company that owns the subscription or workload that the resource belongs to. In smaller organizations, this tag might represent a single corporate or shared top-level organizational element. | `string` | `"Corp"` | no |
+| create | Used when creating the Resource Group. | `string` | `"30m"` | no |
+| days | Number of days to create retension policies for te diagnosys setting. | `number` | `365` | no |
+| delete | Used when deleting the Resource Group. | `string` | `"30m"` | no |
+| enable\_diagnostic | Set to false to prevent the module from creating the diagnosys setting for the NSG Resource.. | `bool` | `false` | no |
+| enabled | Set to false to prevent the module from creating any resources. | `bool` | `true` | no |
 | environment | Environment (e.g. `prod`, `dev`, `staging`). | `string` | `""` | no |
-| existing\_private\_dns\_zone | Name of the existing private DNS zone | `any` | `null` | no |
-| georeplications | A list of Azure locations where the container registry should be geo-replicated | <pre>list(object({<br>    location                = string<br>    zone_redundancy_enabled = optional(bool)<br>  }))</pre> | `[]` | no |
-| identity\_ids | Specifies a list of user managed identity ids to be assigned. This is required when `type` is set to `UserAssigned` or `SystemAssigned, UserAssigned` | `any` | `null` | no |
+| eventhub\_authorization\_rule\_id | Eventhub authorization rule id to pass it to destination details of diagnosys setting of NSG. | `string` | `null` | no |
+| eventhub\_name | Eventhub Name to pass it to destination details of diagnosys setting of NSG. | `string` | `null` | no |
+| extra\_tags | Additional tags (e.g. map(`BusinessUnit`,`XYZ`). | `map(string)` | `{}` | no |
+| inbound\_rules | List of objects that represent the configuration of each inbound rule. | `any` | `[]` | no |
 | label\_order | Label order, e.g. sequence of application name and environment `name`,`environment`,'attribute' [`webserver`,`qa`,`devops`,`public`,] . | `list(any)` | `[]` | no |
-| location | The location/region to keep all your network resources. To get the list of all locations with table format from azure cli, run 'az account list-locations -o table' | `string` | `""` | no |
-| log\_analytics\_workspace\_id | log\_analytics\_workspace\_id | `string` | `null` | no |
-| log\_analytics\_workspace\_name | The name of log analytics workspace name | `any` | `null` | no |
-| managedby | ManagedBy, eg ''. | `string` | `""` | no |
+| log\_analytics\_workspace\_id | log analytics workspace id to pass it to destination details of diagnosys setting of NSG. | `string` | `null` | no |
+| managedby | ManagedBy, eg 'CloudDrove'. | `string` | `"hello@clouddrove.com"` | no |
 | name | Name  (e.g. `app` or `cluster`). | `string` | `""` | no |
-| network\_rule\_set | Manage network rules for Azure Container Registries | <pre>object({<br>    default_action = optional(string)<br>    ip_rule = optional(list(object({<br>      ip_range = string<br>    })))<br>    virtual_network = optional(list(object({<br>      subnet_id = string<br>    })))<br>  })</pre> | `null` | no |
-| private\_dns\_name | n/a | `string` | `"privatelink.azurecr.io"` | no |
-| private\_dns\_zone\_vnet\_link\_registration\_enabled | (Optional) Is auto-registration of virtual machine records in the virtual network in the Private DNS zone enabled? | `bool` | `true` | no |
-| private\_subnet\_address\_prefix | The name of the subnet for private endpoints | `any` | `null` | no |
-| public\_network\_access\_enabled | To denied public access | `bool` | `false` | no |
+| outbound\_rules | List of objects that represent the configuration of each outbound rule. | `any` | `[]` | no |
+| read | Used when retrieving the Resource Group. | `string` | `"5m"` | no |
 | repository | Terraform current module repo | `string` | `""` | no |
-| resource\_group\_name | A container that holds related resources for an Azure solution | `string` | `""` | no |
-| retention\_policy | Set a retention policy for untagged manifests | <pre>object({<br>    days    = optional(number)<br>    enabled = optional(bool)<br>  })</pre> | <pre>{<br>  "days": 10,<br>  "enabled": true<br>}</pre> | no |
-| scope\_map | Manages an Azure Container Registry scope map. Scope Maps are a preview feature only available in Premium SKU Container registries. | <pre>map(object({<br>    actions = list(string)<br>  }))</pre> | `null` | no |
-| storage\_account\_id | n/a | `string` | `null` | no |
-| storage\_account\_name | The name of the hub storage account to store logs | `any` | `null` | no |
-| subnet\_id | Subnet to be used for private endpoint | `list(string)` | `null` | no |
-| tags | A map of tags to add to all resources | `map(string)` | `{}` | no |
-| virtual\_network\_id | Virtual Network to be used for private endpoint | `string` | `null` | no |
+| resource\_group\_location | The Location of the resource group where to create the network security group. | `string` | n/a | yes |
+| resource\_group\_name | The name of the resource group in which to create the network security group. | `string` | n/a | yes |
+| retention\_policy\_enabled | Set to false to prevent the module from creating retension policy for the diagnosys setting. | `bool` | `false` | no |
+| storage\_account\_id | Storage account id to pass it to destination details of diagnosys setting of NSG. | `string` | `null` | no |
+| subnet\_ids | The ID of the Subnet. Changing this forces a new resource to be created. | `list(string)` | `[]` | no |
+| tags | A mapping of tags to assign to the resource. | `map(string)` | `{}` | no |
+| update | Used when updating the Resource Group. | `string` | `"30m"` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| container\_registry\_admin\_password | The Username associated with the Container Registry Admin account - if the admin account is enabled. |
-| container\_registry\_admin\_username | The Username associated with the Container Registry Admin account - if the admin account is enabled. |
-| container\_registry\_id | The ID of the Container Registry |
-| container\_registry\_identity\_principal\_id | The Principal ID for the Service Principal associated with the Managed Service Identity of this Container Registry |
-| container\_registry\_identity\_tenant\_id | The Tenant ID for the Service Principal associated with the Managed Service Identity of this Container Registry |
-| container\_registry\_login\_server | The URL that can be used to log into the container registry |
-| container\_registry\_private\_dns\_zone\_domain | DNS zone name of Azure Container Registry Private endpoints dns name records |
-| container\_registry\_private\_endpoint | The ID of the Azure Container Registry Private Endpoint |
-| container\_registry\_private\_endpoint\_fqdn | Azure Container Registry private endpoint FQDN Addresses |
-| container\_registry\_private\_endpoint\_ip\_addresses | Azure Container Registry private endpoint IPv4 Addresses |
-| container\_registry\_scope\_map\_id | The ID of the Container Registry scope map |
-| container\_registry\_token\_id | The ID of the Container Registry token |
-| container\_registry\_webhook\_id | The ID of the Container Registry Webhook |
+| id | The network security group configuration ID. |
+| name | The name of the network security group. |
+| tags | The tags assigned to the resource. |
 
 
 
@@ -172,9 +169,9 @@ You need to run the following command in the testing folder:
 
 
 ## Feedback 
-If you come accross a bug or have any feedback, please log it in our [issue tracker](https://github.com/clouddrove/terraform-azure-acr/issues), or feel free to drop us an email at [hello@clouddrove.com](mailto:hello@clouddrove.com).
+If you come accross a bug or have any feedback, please log it in our [issue tracker](https://github.com/clouddrove/terraform-azure-network-security-group/issues), or feel free to drop us an email at [hello@clouddrove.com](mailto:hello@clouddrove.com).
 
-If you have found it worth your time, go ahead and give us a ★ on [our GitHub](https://github.com/clouddrove/terraform-azure-acr)!
+If you have found it worth your time, go ahead and give us a ★ on [our GitHub](https://github.com/clouddrove/terraform-azure-network-security-group)!
 
 ## About us
 

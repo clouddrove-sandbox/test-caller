@@ -1,7 +1,5 @@
-# Terraform version
 terraform {
-  required_version = ">= 1.3.0"
-  #experiments      = [module_variable_optional_attrs]
+  required_version = ">= 1.0.0"
 }
 
 terraform {
