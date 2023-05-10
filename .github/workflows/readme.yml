@@ -7,6 +7,6 @@ on:
       - master
   workflow_dispatch:
 jobs:
-  call-workflow-changelog:
+  readme:
     uses: clouddrove/github-shared-workflows/.github/workflows/readme.yml@master
     secrets: inherit
