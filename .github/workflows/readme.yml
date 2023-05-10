@@ -1,12 +1,13 @@
-name: 'Create README.md file'
+name: readme
 permissions: write-all
-
 on:
   push:
     branches:
       - master
   workflow_dispatch:
 jobs:
-  readme:
-    uses: clouddrove/github-shared-workflows/.github/workflows/readme.yml@master
+  tfsec:
+    uses: clouddrove/github-shared-workflows/.github/workflows/tfsec.yml@master
     secrets: inherit
+    with:
+      working_directory: '.'
