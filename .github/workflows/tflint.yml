@@ -1,0 +1,36 @@
+name: Awesome Terraform Workflow
+
+on: 
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  tf-lint:
+    runs-on: ubuntu-16.04
+    strategy:
+      matrix:
+        tf_working_dir: [./, _example/]
+    steps:
+      - uses: hashicorp/setup-terraform@v1
+        name: Setup Terraform
+        with:
+          terraform_version: 0.13.5
+      - uses: actions/checkout@v2
+        name: Checkout source code
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        working-directory: ${{ matrix.tf_working_dir }}
+      - name: tflint
+        uses: reviewdog/action-tflint@v1
+        with:
+          github_token: ${{ secrets.GITHUB }}
+          flags: "-c ../.tflint.hcl"
+          working_directory: ${{ matrix.tf_working_dir }}
+          fail_on_error: "true"
+          filter_mode: "nofilter"
