@@ -1,29 +1,17 @@
-name: lint
+name: terraform-lint
 
-on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+on: [push, pull_request]
 
 jobs:
-  checks:
+  delivery:
+
     runs-on: ubuntu-latest
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
-      with:
-        submodules: true
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version-file: 'go.mod'
-    - name: Run linters
-      uses: golangci/golangci-lint-action@v3.4.0
-      with:
-        version: v1.51
+    - name: Check out code
+      uses: actions/checkout@main
+    - name: Lint Terraform
+      uses: actionshub/terraform-lint@main
 # name: Awesome Terraform Workflow
 
 # on: 
