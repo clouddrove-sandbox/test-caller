@@ -42,7 +42,7 @@ module "subnet" {
     {
       name           = "rt-test"
       address_prefix = "0.0.0.0/0"
-      next_hop_type  = "Internet"
+      next_hop_type  = "int"
     }
   ]
 

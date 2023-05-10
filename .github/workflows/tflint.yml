@@ -1,44 +1,45 @@
-name: Lint
-on:
-  push:
-    branches: [ master ]
-  pull_request:
+# name: Lint
+# on:
+#   push:
+#     branches: [ master ]
+#   pull_request:
 
-jobs:
-  tflint:
-    runs-on: ${{ matrix.os }}
-    continue-on-error: true
+# jobs:
+#   tflint:
+#     runs-on: ${{ matrix.os }}
+#     continue-on-error: true
 
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+#     strategy:
+#       matrix:
+#         os: [ubuntu-latest]
 
-    steps:
-    - uses: actions/checkout@v3
-      name: Checkout source code
+#     steps:
+#     - uses: actions/checkout@v3
+#       name: Checkout source code
 
-    - uses: actions/cache@v3
-      name: Cache plugin dir
-      with:
-        path: ~/.tflint.d/plugins
-        key: ${{ matrix.os }}-tflint-${{ hashFiles('.tflint.hcl') }}
+#     - uses: actions/cache@v3
+#       name: Cache plugin dir
+#       with:
+#         path: ~/.tflint.d/plugins
+#         key: ${{ matrix.os }}-tflint-${{ hashFiles('.tflint.hcl') }}
 
-    - uses: terraform-linters/setup-tflint@v3
-      name: Setup TFLint
-      with:
-        tflint_version: v0.44.1
+#     - uses: terraform-linters/setup-tflint@v3
+#       name: Setup TFLint
+#       with:
+#         tflint_version: v0.44.1
 
-    - name: Show version
-      run: tflint --version
+#     - name: Show version
+#       run: tflint --version
 
-    - name: Init TFLint
-      run: tflint --init
-      env:
-        # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
-        GITHUB_TOKEN: ${{ github.token }}
+#     - name: Init TFLint
+#       run: tflint --init
+#       env:
+#         # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
+#         GITHUB_TOKEN: ${{ github.token }}
 
-    - name: Run TFLint
-      run: tflint -f compact
+#     - name: Run TFLint
+#       run: tflint -f compact
+
 
 # name: terraform-lint
 
@@ -55,39 +56,40 @@ jobs:
 #     - name: Lint Terraform
 #       uses: actionshub/terraform-lint@main
 
-# name: Awesome Terraform Workflow
 
-# on: 
-#   push:
-#     branches:
-#       - master
-#   pull_request:
-#     branches:
-#       - main
-#   workflow_dispatch:
+name: Awesome Terraform Workflow
 
-# jobs:
-#   tf-lint:
-#     runs-on: ubuntu-latest
-#     strategy:
-#       matrix:
-#         tf_working_dir: [./, _example/]
-#     steps:
-#       - uses: hashicorp/setup-terraform@v1
-#         name: Setup Terraform
-#         with:
-#           terraform_version: 1.4.6
-#       - uses: actions/checkout@v2
-#         name: Checkout source code
-#       - name: Terraform Init
-#         id: init
-#         run: terraform init
-#         working-directory: ${{ matrix.tf_working_dir }}
-#       - name: tflint
-#         uses: reviewdog/action-tflint@v1
-#         with:
-#           github_token: ${{ secrets.GITHUB }}
-#           flags: "-c ../.tflint.hcl"
-#           working_directory: ${{ matrix.tf_working_dir }}
-#           fail_on_error: "false"
-#           filter_mode: "nofilter"
+on: 
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  tf-lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tf_working_dir: [./, _example/]
+    steps:
+      - uses: hashicorp/setup-terraform@v1
+        name: Setup Terraform
+        with:
+          terraform_version: 1.4.6
+      - uses: actions/checkout@v2
+        name: Checkout source code
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        working-directory: ${{ matrix.tf_working_dir }}
+      - name: tflint
+        uses: reviewdog/action-tflint@v1
+        with:
+          github_token: ${{ secrets.GITHUB }}
+          flags: "-c ../.tflint.hcl"
+          working_directory: ${{ matrix.tf_working_dir }}
+          fail_on_error: "false"
+          filter_mode: "nofilter"
