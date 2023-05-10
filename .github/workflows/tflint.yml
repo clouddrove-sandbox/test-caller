@@ -41,20 +41,20 @@
 #       run: tflint -f compact
 
 
-name: terraform-lint
+# name: terraform-lint
 
-on: [push, pull_request]
+# on: [push, pull_request]
 
-jobs:
-  delivery:
+# jobs:
+#   delivery:
 
-    runs-on: ubuntu-latest
+#     runs-on: ubuntu-latest
 
-    steps:
-    - name: Check out code
-      uses: actions/checkout@main
-    - name: Lint Terraform
-      uses: actionshub/terraform-lint@main
+#     steps:
+#     - name: Check out code
+#       uses: actions/checkout@main
+#     - name: Lint Terraform
+#       uses: actionshub/terraform-lint@main
 
 name: Awesome Terraform Workflow
 
