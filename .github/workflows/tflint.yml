@@ -35,6 +35,8 @@ jobs:
       env:
         # https://github.com/terraform-linters/tflint/blob/master/docs/user-guide/plugins.md#avoiding-rate-limiting
         GITHUB_TOKEN: ${{ github.token }}
+      with: 
+         fail_on_error: "true"
 
     - name: Run TFLint
       run: tflint -f compact
@@ -53,6 +55,7 @@ jobs:
 #       uses: actions/checkout@main
 #     - name: Lint Terraform
 #       uses: actionshub/terraform-lint@main
+
 # name: Awesome Terraform Workflow
 
 # on: 
