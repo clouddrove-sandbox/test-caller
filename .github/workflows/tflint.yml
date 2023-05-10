@@ -11,7 +11,7 @@ on:
 
 jobs:
   tf-lint:
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         tf_working_dir: [./, _example/]
