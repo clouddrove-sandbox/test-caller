@@ -65,7 +65,7 @@ on:
       - master
   pull_request:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 jobs:
