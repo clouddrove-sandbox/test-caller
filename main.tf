@@ -19,7 +19,7 @@ resource "azurerm_network_security_group" "nsg" {
   count               = var.enabled ? 1 : 0
   name                = format("%s-nsg", module.labels.id)
   resource_group_name = var.resource_group_name
-  locatin            = var.resource_group_location
+  locatin             = var.resource_group_location
   tags                = module.labels.tags
 
   timeouts {
