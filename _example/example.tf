@@ -64,7 +64,6 @@ module "log-analytics" {
 }
 
 module "network_security_group" {
-  depends_on              = [module.subnet]
   resource_group_location = module.resource_group.resource_group_location
   source                  = "../"
   label_order             = ["name", "environment"]
