@@ -3,7 +3,7 @@ name: 'Terraform Configuration Drift Detection'
 on:
   workflow_dispatch: 
   schedule:
-    - cron: '41 3 * * *' # runs nightly at 3:41 am
+    - cron: '2 * * * *' # runs nightly at 3:41 am
 
 #Special permissions required for OIDC authentication
 permissions:
@@ -40,7 +40,7 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
-      run: terraform init
+      run: ls -la && cd _example/ && terraform init
 
     # Generates an execution plan for Terraform
     # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
