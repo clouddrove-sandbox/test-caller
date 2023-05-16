@@ -34,7 +34,7 @@ jobs:
 
     # Install azure-cli
     - name: Install Azure CLI
-      uses: azure/CLI@v1 # elstudio/action-install-azure-cli@v1
+      uses: elstudio/action-install-azure-cli@v1
 
     # Install the latest version of the Terraform CLI
     - name: Setup Terraform
@@ -44,7 +44,7 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Run shell commands
-      run: ls -la
+      run: ls -la && az account show
 
     - name: "Terraform Init"
       uses: hashicorp/terraform-github-actions@master
@@ -53,9 +53,10 @@ jobs:
         tf_actions_version: 1.3.6
         tf_actions_working_dir: '_example/default/'
       env:
-          ARM_CLIENT_ID: '02f2d1fb-4ab1-45e0-976c-d19aefd6a8ff'
-          ARM_SUBSCRIPTION_ID: '068245d4-3c94-42fe-9c4d-9e5e1cabc60c'
-          ARM_TENANT_ID: 'bcffb719-9620-4b7c-b1b0-87ebfb2f7bdd'
+        GITHUB_TOKEN: '${{ secrets.GITHUB }}'
+        ARM_CLIENT_ID: '02f2d1fb-4ab1-45e0-976c-d19aefd6a8ff'
+        ARM_SUBSCRIPTION_ID: '068245d4-3c94-42fe-9c4d-9e5e1cabc60c'
+        ARM_TENANT_ID: 'bcffb719-9620-4b7c-b1b0-87ebfb2f7bdd'
 
     # Generates an execution plan for Terraform
     # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
