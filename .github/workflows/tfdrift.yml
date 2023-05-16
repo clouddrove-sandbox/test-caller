@@ -2,8 +2,8 @@ name: 'Terraform Configuration Drift Detection'
 
 on:
   workflow_dispatch: 
-  schedule:
-    - cron: '2 * * * *' # runs nightly at 3:41 am
+  # schedule:
+  #   - cron: '2 * * * *' # runs nightly at 3:41 am
 
 #Special permissions required for OIDC authentication
 permissions:
@@ -48,6 +48,10 @@ jobs:
         tf_actions_subcommand: "init"
         tf_actions_version: 1.3.6
         tf_actions_working_dir: '_example/default/'
+      env:
+          ARM_CLIENT_ID: '02f2d1fb-4ab1-45e0-976c-d19aefd6a8ff'
+          ARM_SUBSCRIPTION_ID: '068245d4-3c94-42fe-9c4d-9e5e1cabc60c'
+          ARM_TENANT_ID: 'bcffb719-9620-4b7c-b1b0-87ebfb2f7bdd'
 
     # Generates an execution plan for Terraform
     # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
