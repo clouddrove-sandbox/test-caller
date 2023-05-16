@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 jobs:
   tf-drift:
-    uses: clouddrove/github-shared-workflows/.github/workflows/tf-drift.yml@master
+    uses: clouddrove/test-action/.github/workflows/tf-drift.yml@master
     secrets: inherit
     with:
       working_directory: _example/default
