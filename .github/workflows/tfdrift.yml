@@ -34,7 +34,11 @@ jobs:
 
     # Install azure-cli
     - name: Install Azure CLI
-      uses: elstudio/action-install-azure-cli@v1
+      uses: azure/login@v1
+      with:
+        client-id: '02f2d1fb-4ab1-45e0-976c-d19aefd6a8ff'
+        tenant-id: 'bcffb719-9620-4b7c-b1b0-87ebfb2f7bdd'
+        subscription-id: '068245d4-3c94-42fe-9c4d-9e5e1cabc60c'
 
     # Install the latest version of the Terraform CLI
     - name: Setup Terraform
