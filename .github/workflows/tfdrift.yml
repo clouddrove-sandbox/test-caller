@@ -48,14 +48,14 @@ jobs:
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Run shell commands
-      run: ls -la && az account show
+      run: cd _example/default/ && ls -la
 
     - name: "Terraform Init"
       uses: hashicorp/terraform-github-actions@master
       with:
         tf_actions_subcommand: "init"
         tf_actions_version: 1.3.6
-        tf_actions_working_dir: '.' # '_example/default/'
+        # tf_actions_working_dir: '.' # '_example/default/'
       env:
         GITHUB_TOKEN: '${{ secrets.GITHUB }}'
         ARM_CLIENT_ID: '02f2d1fb-4ab1-45e0-976c-d19aefd6a8ff'
