@@ -39,8 +39,14 @@ jobs:
         terraform_wrapper: false
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
-    - name: Terraform Init
-      run: cd _example/default/ && ls -la && terraform init
+    - name: Run shell commands
+      run: ls -la
+
+    - name: "Terraform Init"
+      uses: hashicorp/terraform-github-actions@master
+      with:
+        tf_actions_subcommand: "init"
+        tf_actions_working_dir: '_example/default/'
 
     # Generates an execution plan for Terraform
     # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
