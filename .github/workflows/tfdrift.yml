@@ -32,6 +32,10 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    # Install azure-cli
+    - name: Install Azure CLI
+      uses: elstudio/action-install-azure-cli@v1
+
     # Install the latest version of the Terraform CLI
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v2
