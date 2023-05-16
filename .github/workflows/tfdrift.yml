@@ -37,9 +37,9 @@ jobs:
     - name: Install Azure CLI
       uses: azure/login@v1
       with:
-        client-id: '02f2d1fb-4ab1-45e0-976c-d19aefd6a8ff'
-        tenant-id: 'bcffb719-9620-4b7c-b1b0-87ebfb2f7bdd'
-        subscription-id: '068245d4-3c94-42fe-9c4d-9e5e1cabc60c'
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     # Install the latest version of the Terraform CLI
     - name: Setup Terraform
@@ -59,9 +59,9 @@ jobs:
         tf_actions_working_dir: ${{ env.working-directory }}
       env:
         GITHUB_TOKEN: '${{ secrets.GITHUB }}'
-        ARM_CLIENT_ID: '02f2d1fb-4ab1-45e0-976c-d19aefd6a8ff'
-        ARM_SUBSCRIPTION_ID: '068245d4-3c94-42fe-9c4d-9e5e1cabc60c'
-        ARM_TENANT_ID: 'bcffb719-9620-4b7c-b1b0-87ebfb2f7bdd'
+        # ARM_CLIENT_ID: '02f2d1fb-4ab1-45e0-976c-d19aefd6a8ff'
+        # ARM_SUBSCRIPTION_ID: '068245d4-3c94-42fe-9c4d-9e5e1cabc60c'
+        # ARM_TENANT_ID: 'bcffb719-9620-4b7c-b1b0-87ebfb2f7bdd'
 
     # Generates an execution plan for Terraform
     # An exit code of 0 indicated no changes, 1 a terraform failure, 2 there are pending changes.
