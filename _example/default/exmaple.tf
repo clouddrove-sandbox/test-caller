@@ -7,7 +7,8 @@ terraform {
     storage_account_name = "testingdrfit"
     container_name       = "tfstate"
     key                  = "terraform.tfstate"
-    use_azuread_auth     = true
+    # use_azuread_auth     = true
+    use_oidc = true
   }
 }
 
