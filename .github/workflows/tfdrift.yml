@@ -24,7 +24,7 @@ jobs:
     env:
       #this is needed since we are running terraform with read-only permissions
       ARM_SKIP_PROVIDER_REGISTRATION: true
-      working-directory: _example/default
+      working-directory: aws_example/
     outputs:
       tfplanExitCode: ${{ steps.tf-plan.outputs.exitcode }}
 
@@ -33,11 +33,19 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
-    # Install azure-cli
-    - name: Install Azure CLI
-      uses: azure/login@v1
+    # install AWS-cli
+    - name: Install AWS CLI
+      id: install-aws-cli
+      uses: aws-actions/configure-aws-credentials@v2
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        role-to-assume: arn:aws:iam::924144197303:user/drift-test-iam
+        aws-region: eu-west-1
+
+    # Install azure-cli
+    # - name: Install Azure CLI
+    #   uses: azure/login@v1
+    #   with:
+    #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     # Install the latest version of the Terraform CLI
     - name: Setup Terraform
