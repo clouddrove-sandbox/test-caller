@@ -25,7 +25,6 @@ jobs:
       
       # Install azure-cli
       - name: Install Azure CLI
-        if: ${{ inputs.provider == 'azurerm' }}
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
