@@ -9,6 +9,7 @@ on:
       - '**.md'
       - '**/go.mod'
 env:
+  MSI_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
   ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
   ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
   ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
@@ -26,7 +27,9 @@ jobs:
           docker run --rm -v $(pwd):/src -w /src mcr.microsoft.com/azterraform:latest make generate
       - name: e2e test
         run: |
-          cat scripts/ci-e2e.sh
+          echo "my subscription id is $(echo $MSI_ID)" \n
+          echo ------- \n
+          cat scripts/ci-e2e.sh \n
           echo --------
           sh scripts/ci-e2e.sh
       - name: upload test version snapshots
