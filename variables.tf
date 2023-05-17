@@ -5,7 +5,6 @@ variable "name" {
   default     = ""
   description = "Name  (e.g. `app` or `cluster`)."
 }
-
 variable "repository" {
   type        = string
   default     = "https://github.com/clouddrove/terraform-azure-virtual-network"
