@@ -18,15 +18,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: init
         run: |
-          echo 'SHELL := /bin/bash
-
-          -include $(shell curl -sSL "https://raw.githubusercontent.com/Azure/tfmod-scaffold/main/scripts/install.sh" | bash -s > /dev/null ; echo tfmod-scaffold/GNUmakefile)
-
-          init:
-            @sh "$(CURDIR)/scripts/init.sh"
-
-          cleanup:
-            @sh "$(CURDIR)/scripts/cleanup.sh"' > GNUmakefile
+          echo 'echo -e 'SHELL := /bin/bash\n\n-include $$(shell curl -sSL "https://raw.githubusercontent.com/Azure/tfmod-scaffold/main/scripts/install.sh" | bash -s > /dev/null ; echo tfmod-scaffold/GNUmakefile)\n\ninit:\n\t@sh "$$(CURDIR)/scripts/init.sh"\n\ncleanup:\n\t@sh "$$(CURDIR)/scripts/cleanup.sh"' > GNUmakefile
           docker run --rm -v $(pwd):/src -w /src mcr.microsoft.com/azterraform:latest make generate
       - name: e2e test
         run: |
