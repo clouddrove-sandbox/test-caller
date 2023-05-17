@@ -9,7 +9,7 @@ on:
       - '**.md'
       - '**/go.mod'
 env:
-  MSI_ID: "21b2147b-eda0-493a-8d93-673cc9507735"
+  # MSI_ID: "21b2147b-eda0-493a-8d93-673cc9507735"
   ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
   ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
   ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
@@ -22,6 +22,13 @@ jobs:
       name: acctests
     steps:
       - uses: actions/checkout@v3
+      
+      # Install azure-cli
+      - name: Install Azure CLI
+        if: ${{ inputs.provider == 'azurerm' }}
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: init
         run: |
           docker run --rm -v $(pwd):/src -w /src mcr.microsoft.com/azterraform:latest make generate
