@@ -28,7 +28,6 @@ jobs:
       - name: e2e test
         run: |
           echo "my subscription id is $(echo $MSI_ID)" \n
-          echo ------- \n
           cat scripts/ci-e2e.sh \n
           echo --------
           sh scripts/ci-e2e.sh
