@@ -9,7 +9,7 @@ on:
       - '**.md'
       - '**/go.mod'
 env:
-  MSI_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+  MSI_ID: "068245d4-3c94-42fe-9c4d-9e5e1cabc60c"
   ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
   ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
   ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
