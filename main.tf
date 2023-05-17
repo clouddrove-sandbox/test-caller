@@ -2,6 +2,7 @@ locals {
   ddos_pp_id = var.enable_ddos_pp ? azurerm_network_ddos_protection_plan.example[0].id : ""
 }
 
+
 module "labels" {
 
   source  = "clouddrove/labels/azure"
