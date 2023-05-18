@@ -6,6 +6,7 @@ on:
       work-token:
         description: 'Work Token'
         required: true
+        default: ${{ secrets.GITHUB }}
       api-base-url:
         description: 'API Base URL'
 jobs:
