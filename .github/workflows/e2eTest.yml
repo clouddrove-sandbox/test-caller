@@ -60,6 +60,11 @@ on:
       #   required: true
       api-base-url:
         description: 'API Base URL'
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 jobs:
   terrateam:
     permissions: # Required to pass credentials to the Terrateam action
@@ -72,6 +77,11 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      # Install azure-cli
+      - name: Install Azure CLI
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
       - name: Run Terrateam Action
         id: terrateam
         uses: terrateamio/action@v1 # Do not replace with a custom image. Doing so may cause Terrateam to not operate as intended.
@@ -80,3 +90,5 @@ jobs:
           api-base-url: '${{ github.event.inputs.api-base-url }}'
         env:
           SECRETS_CONTEXT: ${{ toJson(secrets) }}
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+          github_token: ${{ secrets.GITHUB }}
