@@ -1,51 +1,82 @@
-name: E2E Test
-on:
-  pull_request:
-    types: [ 'opened', 'synchronize' ]
-    paths:
-      - '.github/**'
-      - '**.go'
-      - '**.tf'
-      - '**.md'
-      - '**/go.mod'
-env:
-  MSI_ID: "/subscriptions/068245d4-3c94-42fe-9c4d-9e5e1cabc60c/resourcegroups/test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/test-workflow"
-  ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-  ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
-  ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
-  ARM_CLIENT_SECRET: "${{ secrets.ARM_CLIENT_SECRET }}"
+# name: E2E Test
+# on:
+#   pull_request:
+#     types: [ 'opened', 'synchronize' ]
+#     paths:
+#       - '.github/**'
+#       - '**.go'
+#       - '**.tf'
+#       - '**.md'
+#       - '**/go.mod'
+# env:
+#   MSI_ID: "/subscriptions/068245d4-3c94-42fe-9c4d-9e5e1cabc60c/resourcegroups/test/providers/Microsoft.ManagedIdentity/userAssignedIdentities/test-workflow"
+#   ARM_SUBSCRIPTION_ID: "${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+#   ARM_TENANT_ID: "${{ secrets.AZURE_TENANT_ID }}"
+#   ARM_CLIENT_ID: "${{ secrets.AZURE_CLIENT_ID }}"
+#   ARM_CLIENT_SECRET: "${{ secrets.ARM_CLIENT_SECRET }}"
 
+# jobs:
+#   acc-tests:
+#     runs-on: ubuntu-latest
+#     environment:
+#       name: acctests
+#     steps:
+#       - uses: actions/checkout@v3
+      
+#       # Install azure-cli
+#       - name: Install Azure CLI
+#         uses: azure/login@v1
+#         with:
+#           creds: ${{ secrets.AZURE_CREDENTIALS }}
+#       - name: init
+#         run: |
+#           docker run --rm -v $(pwd):/src -w /src mcr.microsoft.com/azterraform:latest make generate
+#       - name: e2e test
+#         run: |
+#           echo "my subscription id is $(echo $MSI_ID)"
+#           cat scripts/ci-e2e.sh
+#           echo --------
+#           sh scripts/ci-e2e.sh
+#       - name: upload test version snapshots
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: TestRecord-${{ github.event.number }}
+#           retention-days: 60
+#           path: |
+#             _example/**/TestRecord.md.tmp
+#       - name: version-upgrade test
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GITHUB }}
+#         run: |
+#           sh scripts/ci-version-upgrade.sh
+
+name: 'Terrateam Workflow'
+on:
+  workflow_dispatch:
+    inputs:
+      # The work-token and api-base-url are automatically passed in by the Terrateam backend
+      # work-token:
+      #   description: 'Work Token'
+      #   required: true
+      api-base-url:
+        description: 'API Base URL'
 jobs:
-  acc-tests:
+  terrateam:
+    permissions: # Required to pass credentials to the Terrateam action
+      id-token: write
+      contents: read
     runs-on: ubuntu-latest
-    environment:
-      name: acctests
+    timeout-minutes: 1440
+    name: Terrateam Action
     steps:
       - uses: actions/checkout@v3
-      
-      # Install azure-cli
-      - name: Install Azure CLI
-        uses: azure/login@v1
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: init
-        run: |
-          docker run --rm -v $(pwd):/src -w /src mcr.microsoft.com/azterraform:latest make generate
-      - name: e2e test
-        run: |
-          echo "my subscription id is $(echo $MSI_ID)"
-          cat scripts/ci-e2e.sh
-          echo --------
-          sh scripts/ci-e2e.sh
-      - name: upload test version snapshots
-        uses: actions/upload-artifact@v3
+          fetch-depth: 0
+      - name: Run Terrateam Action
+        id: terrateam
+        uses: terrateamio/action@v1 # Do not replace with a custom image. Doing so may cause Terrateam to not operate as intended.
         with:
-          name: TestRecord-${{ github.event.number }}
-          retention-days: 60
-          path: |
-            _example/**/TestRecord.md.tmp
-      - name: version-upgrade test
+          work-token: ${{ secrets.GITHUB }} #'${{ github.event.inputs.work-token }}'
+          api-base-url: '${{ github.event.inputs.api-base-url }}'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB }}
-        run: |
-          sh scripts/ci-version-upgrade.sh
+          SECRETS_CONTEXT: ${{ toJson(secrets) }}
