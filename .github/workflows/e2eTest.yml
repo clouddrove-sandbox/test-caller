@@ -3,10 +3,10 @@ on:
   workflow_dispatch:
     inputs:
       # The work-token and api-base-url are automatically passed in by the Terrateam backend
-      work-token:
-        description: 'Work Token'
-        required: true
-        default: ${{ secrets.GITHUB }}
+      # work-token:
+      #   description: 'Work Token'
+      #   required: true
+      #   default: ${{ secrets.GITHUB }}
       api-base-url:
         description: 'API Base URL'
 jobs:
@@ -25,7 +25,7 @@ jobs:
         id: terrateam
         uses: terrateamio/action@v1 # Do not replace with a custom image. Doing so may cause Terrateam to not operate as intended.
         with:
-          work-token: '${{ github.event.inputs.work-token }}'
+          work-token: ${{ secrets.GITHUB }} #'${{ github.event.inputs.work-token }}'
           api-base-url: '${{ github.event.inputs.api-base-url }}'
         env:
           SECRETS_CONTEXT: ${{ toJson(secrets) }}
