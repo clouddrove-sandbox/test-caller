@@ -1,6 +1,3 @@
-##########################################################################
-# THIS FILE SHOULD LIVE IN .terrateam/config.yml
-##########################################################################
 access_control:
   enabled: true
   apply_require_all_dirspace_access: true
