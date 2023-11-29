@@ -9,11 +9,24 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
+    assignees:
+      - "clouddrove-ci"
+    reviewers:
+      - "approvers"
   - package-ecosystem: "terraform" # See documentation for possible values
     directory: "_example/default" # Location of package manifests
     schedule:
       interval: "daily"
+    assignees:
+      - "clouddrove-ci"
+    reviewers:
+      - "approvers"
   - package-ecosystem: "terraform" # See documentation for possible values
     directory: "_example/vnet-with-flow-logs" # Location of package manifests
     schedule:
       interval: "daily"
+    assignees:
+      - "clouddrove-ci"
+    reviewers:
+      - "approvers"
+
