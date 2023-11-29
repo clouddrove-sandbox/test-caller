@@ -8,12 +8,12 @@ updates:
   - package-ecosystem: "terraform" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "terraform" # See documentation for possible values
     directory: "_example/default" # Location of package manifests
     schedule:
-      interval: "weekly"
+      interval: "daily"
   - package-ecosystem: "terraform" # See documentation for possible values
     directory: "_example/vnet-with-flow-logs" # Location of package manifests
     schedule:
-      interval: "weekly"
+      interval: "daily"
