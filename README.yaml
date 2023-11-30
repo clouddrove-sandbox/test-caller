@@ -4,66 +4,212 @@
 # Run `make readme` to rebuild the `README.md`
 #
 
-
 # Name of this project
-name: Terraform AZURE VIRTUAL-NETWORK
+name : Terraform AWS ALB
 
 # License of this project
 license: "APACHE"
 
 # Canonical GitHub repo
-github_repo: clouddrove/terraform-azure-vnet
+github_repo: clouddrove/terraform-aws-alb
 
 # Badges to display
 badges:
-  - name: "Terraform"
-    image: "https://img.shields.io/badge/Terraform-v1.0.0-green"
-    url: "https://www.terraform.io"
+  - name: "Latest Release"
+    image: "https://img.shields.io/github/release/clouddrove/terraform-aws-alb.svg"
+    url: "https://github.com/clouddrove/terraform-aws-alb/releases/latest"
+  - name: "tfsec"
+    image: "https://github.com/clouddrove/terraform-aws-alb/actions/workflows/tfsec.yml/badge.svg"
+    url: "https://github.com/clouddrove/terraform-aws-alb/actions/workflows/tfsec.yml"
   - name: "Licence"
     image: "https://img.shields.io/badge/License-APACHE-blue.svg"
     url: "LICENSE.md"
 
+prerequesties:
+  - name: Terraform 1.5.3
+    url: https://learn.hashicorp.com/terraform/getting-started/install.html
 #  description of this project
 description: |-
-  Terraform module to create VIRTUAL-NETWORK resource on AZURE.
+  This terraform module is used to create ALB on AWS.
 
 # extra content
 include:
   - "terraform.md"
 
 # How to use this project
-# yamllint disable rule:line-length
-usage: |-
-  ### Simple Example
-  Here is an example of how you can use this module in your inventory structure:
+usage : |-
+  Here are examples of how you can use this module in your inventory structure:
+  ### ALB Example
   ```hcl
-  module "virtual-network" {
-   source              = "clouddrove/vnet/azure"
-   name                = "app"
-   environment         = "test"
-   label_order         = ["name", "environment"]
-   resource_group_name = module.resource_group.resource_group_name
-   location            = module.resource_group.resource_group_location
-   address_space       = "10.0.0.0/16"
-   }
-    ```
-  ##vnet with flow log
+    module "alb" {
+      source                     = "clouddrove/alb/aws"
+      version                    = "1.4.0"
+      name                       = local.name
+      enable                     = true
+      internal                   = true
+      load_balancer_type         = "application"
+      instance_count             = module.ec2.instance_count
+      subnets                    = module.public_subnets.public_subnet_id
+      target_id                  = module.ec2.instance_id
+      vpc_id                     = module.vpc.vpc_id
+      allowed_ip                 = [module.vpc.vpc_cidr_block]
+      allowed_ports              = [3306]
+      listener_certificate_arn   = module.acm.arn
+      enable_deletion_protection = false
+      with_target_group          = true
+      https_enabled              = true
+      http_enabled               = true
+      https_port                 = 443
+      listener_type              = "forward"
+      target_group_port          = 80
+
+      http_tcp_listeners = [
+        {
+          port               = 80
+          protocol           = "TCP"
+          target_group_index = 0
+        },
+        {
+          port               = 81
+          protocol           = "TCP"
+          target_group_index = 0
+        },
+      ]
+      https_listeners = [
+        {
+          port               = 443
+          protocol           = "TLS"
+          target_group_index = 0
+          certificate_arn    = module.acm.arn
+        },
+        {
+          port               = 84
+          protocol           = "TLS"
+          target_group_index = 0
+          certificate_arn    = module.acm.arn
+        },
+      ]
+
+      target_groups = [
+        {
+          backend_protocol     = "HTTP"
+          backend_port         = 80
+          target_type          = "instance"
+          deregistration_delay = 300
+          health_check = {
+            enabled             = true
+            interval            = 30
+            path                = "/"
+            port                = "traffic-port"
+            healthy_threshold   = 3
+            unhealthy_threshold = 3
+            timeout             = 10
+            protocol            = "HTTP"
+            matcher             = "200-399"
+          }
+        }
+      ]
+
+      extra_ssl_certs = [
+        {
+          https_listener_index = 0
+          certificate_arn      = module.acm.arn
+        }
+      ]
+      }
+  ```
+
+  ### NLB Example
   ```hcl
-  module "virtual-network" {
-   source              = "clouddrove/vnet/azure"
-   name                = "app"
-   environment         = "test"
-   label_order         = ["name", "environment"]
-   resource_group_name = module.resource_group.resource_group_name
-   location            = module.resource_group.resource_group_location
-   address_space       = "10.0.0.0/16"
-   ## For enabling network flow logs for vnet.
-   enable_flow_logs          = true
-   enable_network_watcher    = true
-   enable_traffic_analytics  = true
-   network_security_group_id = module.security_group.id
-   storage_account_id        = module.storage.default_storage_account_id
-   workspace_id              = module.log-analytics.workspace_customer_id
-   workspace_resource_id     = module.log-analytics.workspace_id
-   }
-    ```
+    module "nlb" {
+      source                     = "clouddrove/alb/aws"
+      version                    = "1.4.0"
+      name                       = local.name
+      enable                     = true
+      internal                   = false
+      load_balancer_type         = "network"
+      instance_count             = module.ec2.instance_count
+      subnets                    = module.public_subnets.public_subnet_id
+      target_id                  = module.ec2.instance_id
+      vpc_id                     = module.vpc.vpc_id
+      enable_deletion_protection = false
+      with_target_group          = true
+      http_tcp_listeners = [
+        {
+          port               = 80
+          protocol           = "TCP"
+          target_group_index = 0
+        },
+        {
+          port               = 81
+          protocol           = "TCP"
+          target_group_index = 0
+        },
+      ]
+      target_groups = [
+        {
+          backend_protocol = "TCP"
+          backend_port     = 80
+          target_type      = "instance"
+        },
+        {
+          backend_protocol = "TCP"
+          backend_port     = 81
+          target_type      = "instance"
+        },
+      ]
+
+      https_listeners = [
+        {
+          port               = 443
+          protocol           = "TLS"
+          target_group_index = 0
+          certificate_arn    = module.acm.arn
+        },
+        {
+          port               = 84
+          protocol           = "TLS"
+          target_group_index = 0
+          certificate_arn    = module.acm.arn
+        },
+      ]
+    }
+  ```
+
+  ### CLB Example
+  ```hcl
+    module "clb" {
+    source                     = "clouddrove/alb/aws"
+    version                    = "1.4.0"
+
+    name               = local.name
+    load_balancer_type = "classic"
+    clb_enable         = true
+    internal           = true
+    vpc_id             = module.vpc.vpc_id
+    target_id          = module.ec2.instance_id
+    subnets            = module.public_subnets.public_subnet_id
+    with_target_group  = true
+    listeners = [
+      {
+        lb_port            = 22000
+        lb_protocol        = "TCP"
+        instance_port      = 22000
+        instance_protocol  = "TCP"
+        ssl_certificate_id = null
+      },
+      {
+        lb_port            = 4444
+        lb_protocol        = "TCP"
+        instance_port      = 4444
+        instance_protocol  = "TCP"
+        ssl_certificate_id = null
+      }
+    ]
+    health_check_target              = "TCP:4444"
+    health_check_timeout             = 10
+    health_check_interval            = 30
+    health_check_unhealthy_threshold = 5
+    health_check_healthy_threshold   = 5
+    }
+  ```

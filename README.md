@@ -4,17 +4,20 @@
 
 
 <h1 align="center">
-    Terraform AZURE VIRTUAL-NETWORK
+    Terraform AWS ALB
 </h1>
 
 <p align="center" style="font-size: 1.2rem;"> 
-    Terraform module to create VIRTUAL-NETWORK resource on AZURE.
+    This terraform module is used to create ALB on AWS.
      </p>
 
 <p align="center">
 
-<a href="https://www.terraform.io">
-  <img src="https://img.shields.io/badge/Terraform-v1.0.0-green" alt="Terraform">
+<a href="https://github.com/clouddrove/terraform-aws-alb/releases/latest">
+  <img src="https://img.shields.io/github/release/clouddrove/terraform-aws-alb.svg" alt="Latest Release">
+</a>
+<a href="https://github.com/clouddrove/terraform-aws-alb/actions/workflows/tfsec.yml">
+  <img src="https://github.com/clouddrove/terraform-aws-alb/actions/workflows/tfsec.yml/badge.svg" alt="tfsec">
 </a>
 <a href="LICENSE.md">
   <img src="https://img.shields.io/badge/License-APACHE-blue.svg" alt="Licence">
@@ -24,13 +27,13 @@
 </p>
 <p align="center">
 
-<a href='https://facebook.com/sharer/sharer.php?u=https://github.com/clouddrove/terraform-azure-vnet'>
+<a href='https://facebook.com/sharer/sharer.php?u=https://github.com/clouddrove/terraform-aws-alb'>
   <img title="Share on Facebook" src="https://user-images.githubusercontent.com/50652676/62817743-4f64cb80-bb59-11e9-90c7-b057252ded50.png" />
 </a>
-<a href='https://www.linkedin.com/shareArticle?mini=true&title=Terraform+AZURE+VIRTUAL-NETWORK&url=https://github.com/clouddrove/terraform-azure-vnet'>
+<a href='https://www.linkedin.com/shareArticle?mini=true&title=Terraform+AWS+ALB&url=https://github.com/clouddrove/terraform-aws-alb'>
   <img title="Share on LinkedIn" src="https://user-images.githubusercontent.com/50652676/62817742-4e339e80-bb59-11e9-87b9-a1f68cae1049.png" />
 </a>
-<a href='https://twitter.com/intent/tweet/?text=Terraform+AZURE+VIRTUAL-NETWORK&url=https://github.com/clouddrove/terraform-azure-vnet'>
+<a href='https://twitter.com/intent/tweet/?text=Terraform+AWS+ALB&url=https://github.com/clouddrove/terraform-aws-alb'>
   <img title="Share on Twitter" src="https://user-images.githubusercontent.com/50652676/62817740-4c69db00-bb59-11e9-8a79-3580fbbf6d5c.png" />
 </a>
 
@@ -50,11 +53,7 @@ We have [*fifty plus terraform modules*][terraform_modules]. A few of them are c
 ## Prerequisites
 
 This module has a few dependencies: 
-
-- [Terraform 1.x.x](https://learn.hashicorp.com/terraform/getting-started/install.html)
-- [Go](https://golang.org/doc/install)
-- [github.com/stretchr/testify/assert](https://github.com/stretchr/testify)
-- [github.com/gruntwork-io/terratest/modules/terraform](https://github.com/gruntwork-io/terratest)
+- [Terraform 1.5.3](https://learn.hashicorp.com/terraform/getting-started/install.html)
 
 
 
@@ -65,42 +64,184 @@ This module has a few dependencies:
 ## Examples
 
 
-**IMPORTANT:** Since the `master` branch used in `source` varies based on new modifications, we suggest that you use the release versions [here](https://github.com/clouddrove/terraform-azure-vnet/releases).
+**IMPORTANT:** Since the `master` branch used in `source` varies based on new modifications, we suggest that you use the release versions [here](https://github.com/clouddrove/terraform-aws-alb/releases).
 
 
-### Simple Example
-Here is an example of how you can use this module in your inventory structure:
+Here are examples of how you can use this module in your inventory structure:
+### ALB Example
 ```hcl
-module "virtual-network" {
- source              = "clouddrove/vnet/azure"
- name                = "app"
- environment         = "test"
- label_order         = ["name", "environment"]
- resource_group_name = module.resource_group.resource_group_name
- location            = module.resource_group.resource_group_location
- address_space       = "10.0.0.0/16"
- }
-  ```
-##vnet with flow log
+  module "alb" {
+    source                     = "clouddrove/alb/aws"
+    version                    = "1.4.0"
+    name                       = local.name
+    enable                     = true
+    internal                   = true
+    load_balancer_type         = "application"
+    instance_count             = module.ec2.instance_count
+    subnets                    = module.public_subnets.public_subnet_id
+    target_id                  = module.ec2.instance_id
+    vpc_id                     = module.vpc.vpc_id
+    allowed_ip                 = [module.vpc.vpc_cidr_block]
+    allowed_ports              = [3306]
+    listener_certificate_arn   = module.acm.arn
+    enable_deletion_protection = false
+    with_target_group          = true
+    https_enabled              = true
+    http_enabled               = true
+    https_port                 = 443
+    listener_type              = "forward"
+    target_group_port          = 80
+
+    http_tcp_listeners = [
+      {
+        port               = 80
+        protocol           = "TCP"
+        target_group_index = 0
+      },
+      {
+        port               = 81
+        protocol           = "TCP"
+        target_group_index = 0
+      },
+    ]
+    https_listeners = [
+      {
+        port               = 443
+        protocol           = "TLS"
+        target_group_index = 0
+        certificate_arn    = module.acm.arn
+      },
+      {
+        port               = 84
+        protocol           = "TLS"
+        target_group_index = 0
+        certificate_arn    = module.acm.arn
+      },
+    ]
+
+    target_groups = [
+      {
+        backend_protocol     = "HTTP"
+        backend_port         = 80
+        target_type          = "instance"
+        deregistration_delay = 300
+        health_check = {
+          enabled             = true
+          interval            = 30
+          path                = "/"
+          port                = "traffic-port"
+          healthy_threshold   = 3
+          unhealthy_threshold = 3
+          timeout             = 10
+          protocol            = "HTTP"
+          matcher             = "200-399"
+        }
+      }
+    ]
+
+    extra_ssl_certs = [
+      {
+        https_listener_index = 0
+        certificate_arn      = module.acm.arn
+      }
+    ]
+    }
+```
+
+### NLB Example
 ```hcl
-module "virtual-network" {
- source              = "clouddrove/vnet/azure"
- name                = "app"
- environment         = "test"
- label_order         = ["name", "environment"]
- resource_group_name = module.resource_group.resource_group_name
- location            = module.resource_group.resource_group_location
- address_space       = "10.0.0.0/16"
- ## For enabling network flow logs for vnet.
- enable_flow_logs          = true
- enable_network_watcher    = true
- enable_traffic_analytics  = true
- network_security_group_id = module.security_group.id
- storage_account_id        = module.storage.default_storage_account_id
- workspace_id              = module.log-analytics.workspace_customer_id
- workspace_resource_id     = module.log-analytics.workspace_id
- }
-  ```
+  module "nlb" {
+    source                     = "clouddrove/alb/aws"
+    version                    = "1.4.0"
+    name                       = local.name
+    enable                     = true
+    internal                   = false
+    load_balancer_type         = "network"
+    instance_count             = module.ec2.instance_count
+    subnets                    = module.public_subnets.public_subnet_id
+    target_id                  = module.ec2.instance_id
+    vpc_id                     = module.vpc.vpc_id
+    enable_deletion_protection = false
+    with_target_group          = true
+    http_tcp_listeners = [
+      {
+        port               = 80
+        protocol           = "TCP"
+        target_group_index = 0
+      },
+      {
+        port               = 81
+        protocol           = "TCP"
+        target_group_index = 0
+      },
+    ]
+    target_groups = [
+      {
+        backend_protocol = "TCP"
+        backend_port     = 80
+        target_type      = "instance"
+      },
+      {
+        backend_protocol = "TCP"
+        backend_port     = 81
+        target_type      = "instance"
+      },
+    ]
+
+    https_listeners = [
+      {
+        port               = 443
+        protocol           = "TLS"
+        target_group_index = 0
+        certificate_arn    = module.acm.arn
+      },
+      {
+        port               = 84
+        protocol           = "TLS"
+        target_group_index = 0
+        certificate_arn    = module.acm.arn
+      },
+    ]
+  }
+```
+
+### CLB Example
+```hcl
+  module "clb" {
+  source                     = "clouddrove/alb/aws"
+  version                    = "1.4.0"
+
+  name               = local.name
+  load_balancer_type = "classic"
+  clb_enable         = true
+  internal           = true
+  vpc_id             = module.vpc.vpc_id
+  target_id          = module.ec2.instance_id
+  subnets            = module.public_subnets.public_subnet_id
+  with_target_group  = true
+  listeners = [
+    {
+      lb_port            = 22000
+      lb_protocol        = "TCP"
+      instance_port      = 22000
+      instance_protocol  = "TCP"
+      ssl_certificate_id = null
+    },
+    {
+      lb_port            = 4444
+      lb_protocol        = "TCP"
+      instance_port      = 4444
+      instance_protocol  = "TCP"
+      ssl_certificate_id = null
+    }
+  ]
+  health_check_target              = "TCP:4444"
+  health_check_timeout             = 10
+  health_check_interval            = 30
+  health_check_unhealthy_threshold = 5
+  health_check_healthy_threshold   = 5
+  }
+```
 
 
 
@@ -111,46 +252,98 @@ module "virtual-network" {
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| address\_space | The address space that is used by the virtual network. | `string` | `""` | no |
-| address\_spaces | The list of the address spaces that is used by the virtual network. | `list(string)` | `[]` | no |
-| attributes | Additional attributes (e.g. `1`). | `list(any)` | `[]` | no |
-| bgp\_community | The BGP community attribute in format <as-number>:<community-value>. | `number` | `null` | no |
-| delimiter | Delimiter to be used between `organization`, `environment`, `name` and `attributes`. | `string` | `"-"` | no |
-| dns\_servers | The DNS servers to be used with vNet. | `list(string)` | `[]` | no |
-| edge\_zone | (Optional) Specifies the Edge Zone within the Azure Region where this Virtual Network should exist. Changing this forces a new Virtual Network to be created. | `string` | `null` | no |
-| enable | Flag to control the module creation | `bool` | `true` | no |
-| enable\_ddos\_pp | Flag to control the resource creation | `bool` | `false` | no |
-| enable\_flow\_logs | Flag to control creation of flow logs for nsg. | `bool` | `false` | no |
-| enable\_network\_watcher | Flag to control creation of network watcher. | `bool` | `false` | no |
-| enable\_traffic\_analytics | Flag to control creation of traffic analytics. | `bool` | `true` | no |
-| environment | Environment (e.g. `prod`, `dev`, `staging`). | `string` | `""` | no |
-| flow\_timeout\_in\_minutes | The flow timeout in minutes for the Virtual Network, which is used to enable connection tracking for intra-VM flows. Possible values are between 4 and 30 minutes. | `number` | `10` | no |
-| label\_order | Label order, e.g. `name`,`application`. | `list(any)` | `[]` | no |
-| location | The location/region where the virtual network is created. Changing this forces a new resource to be created. | `string` | `""` | no |
+| access\_logs | Map containing access logging configuration for load balancer. | `map(string)` | `{}` | no |
+| allowed\_ip | List of allowed ip. | `list(any)` | `[]` | no |
+| allowed\_ports | List of allowed ingress ports | `list(any)` | `[]` | no |
+| cidr\_blocks | equal to 0. The supported values are defined in the IpProtocol argument on the IpPermission API reference | `list(string)` | <pre>[<br>  "0.0.0.0/0"<br>]</pre> | no |
+| clb\_enable | If true, create clb. | `bool` | `false` | no |
+| connection\_draining | TBoolean to enable connection draining. Default: false. | `bool` | `false` | no |
+| connection\_draining\_timeout | The time after which connection draining is aborted in seconds. | `number` | `300` | no |
+| desync\_mitigation\_mode | Determines how the load balancer handles requests that might pose a security risk to an application due to HTTP desync. | `string` | `"defensive"` | no |
+| egress\_protocol | equal to 0. The supported values are defined in the IpProtocol argument on the IpPermission API reference | `number` | `-1` | no |
+| egress\_rule | Enable to create egress rule | `bool` | `true` | no |
+| enable | If true, create alb. | `bool` | `false` | no |
+| enable\_cross\_zone\_load\_balancing | Indicates whether cross zone load balancing should be enabled in application load balancers. | `bool` | `true` | no |
+| enable\_deletion\_protection | If true, deletion of the load balancer will be disabled via the AWS API. This will prevent Terraform from deleting the load balancer. Defaults to false. | `bool` | `false` | no |
+| enable\_http2 | Indicates whether HTTP/2 is enabled in application load balancers. | `bool` | `true` | no |
+| enable\_security\_group | Enable default Security Group with only Egress traffic allowed. | `bool` | `true` | no |
+| enable\_tls\_version\_and\_cipher\_suite\_headers | Indicates whether the two headers (x-amzn-tls-version and x-amzn-tls-cipher-suite), which contain information about the negotiated TLS version and cipher suite, are added to the client request before sending it to the target. | `bool` | `false` | no |
+| enable\_waf\_fail\_open | Indicates whether to route requests to targets if lb fails to forward the request to AWS WAF | `bool` | `false` | no |
+| enable\_xff\_client\_port | Indicates whether the X-Forwarded-For header should preserve the source port that the client used to connect to the load balancer in application load balancers. | `bool` | `true` | no |
+| environment | Environment (e.g. `prod`, `dev`, `staging`). | `string` | `"test"` | no |
+| extra\_ssl\_certs | A list of maps describing any extra SSL certificates to apply to the HTTPS listeners. Required key/values: certificate\_arn, https\_listener\_index (the index of the listener within https\_listeners which the cert applies toward). | `list(map(string))` | `[]` | no |
+| from\_port | (Required) Start port (or ICMP type number if protocol is icmp or icmpv6). | `number` | `0` | no |
+| health\_check\_healthy\_threshold | The number of successful health checks before an instance is put into service. | `number` | `10` | no |
+| health\_check\_interval | The time between health check attempts in seconds. | `number` | `30` | no |
+| health\_check\_target | The target to use for health checks. | `string` | `"TCP:80"` | no |
+| health\_check\_timeout | The time after which a health check is considered failed in seconds. | `number` | `5` | no |
+| health\_check\_unhealthy\_threshold | The number of failed health checks before an instance is taken out of service. | `number` | `2` | no |
+| http\_enabled | A boolean flag to enable/disable HTTP listener. | `bool` | `true` | no |
+| http\_listener\_type | The type of routing action. Valid values are forward, redirect, fixed-response, authenticate-cognito and authenticate-oidc. | `string` | `"redirect"` | no |
+| http\_port | The port on which the load balancer is listening. like 80 or 443. | `number` | `80` | no |
+| http\_tcp\_listener\_rules | A list of maps describing the Listener Rules for this ALB. Required key/values: actions, conditions. Optional key/values: priority, http\_tcp\_listener\_index (default to http\_tcp\_listeners[count.index]) | `any` | `[]` | no |
+| http\_tcp\_listeners | A list of maps describing the HTTP listeners or TCP ports for this ALB. Required key/values: port, protocol. Optional key/values: target\_group\_index (defaults to http\_tcp\_listeners[count.index]) | `any` | `[]` | no |
+| https\_enabled | A boolean flag to enable/disable HTTPS listener. | `bool` | `true` | no |
+| https\_listener\_rules | A list of maps describing the Listener Rules for this ALB. Required key/values: actions, conditions. Optional key/values: priority, https\_listener\_index (default to https\_listeners[count.index]) | `any` | `[]` | no |
+| https\_listeners | A list of maps describing the HTTPS listeners for this ALB. Required key/values: port, certificate\_arn. Optional key/values: ssl\_policy (defaults to ELBSecurityPolicy-2016-08), target\_group\_index (defaults to 0) | `list(map(string))` | `[]` | no |
+| https\_port | The port on which the load balancer is listening. like 80 or 443. | `number` | `443` | no |
+| idle\_timeout | The time in seconds that the connection is allowed to be idle. | `number` | `60` | no |
+| instance\_count | The count of instances. | `number` | `0` | no |
+| internal | If true, the LB will be internal. | `string` | `""` | no |
+| ip\_address\_type | The type of IP addresses used by the subnets for your load balancer. The possible values are ipv4 and dualstack. | `string` | `"ipv4"` | no |
+| ipv6\_cidr\_blocks | Enable to create egress rule | `list(string)` | <pre>[<br>  "::/0"<br>]</pre> | no |
+| is\_external | enable to udated existing security Group | `bool` | `false` | no |
+| label\_order | Label order, e.g. `name`,`application`. | `list(any)` | <pre>[<br>  "name",<br>  "environment"<br>]</pre> | no |
+| listener\_certificate\_arn | The ARN of the SSL server certificate. Exactly one certificate is required if the protocol is HTTPS. | `string` | `""` | no |
+| listener\_https\_fixed\_response | Have the HTTPS listener return a fixed response for the default action. | <pre>object({<br>    content_type = string<br>    message_body = string<br>    status_code  = string<br>  })</pre> | `null` | no |
+| listener\_protocol | The protocol for connections from clients to the load balancer. Valid values are TCP, HTTP and HTTPS. Defaults to HTTP. | `string` | `"HTTPS"` | no |
+| listener\_type | The type of routing action. Valid values are forward, redirect, fixed-response, authenticate-cognito and authenticate-oidc. | `string` | `"forward"` | no |
+| listeners | A list of listener configurations for the ELB. | <pre>list(object({<br>    lb_port : number<br>    lb_protocol : string<br>    instance_port : number<br>    instance_protocol : string<br>    ssl_certificate_id : string<br>  }))</pre> | `[]` | no |
+| load\_balancer\_create\_timeout | Timeout value when creating the ALB. | `string` | `"10m"` | no |
+| load\_balancer\_delete\_timeout | Timeout value when deleting the ALB. | `string` | `"10m"` | no |
+| load\_balancer\_type | The type of load balancer to create. Possible values are application or network. The default value is application. | `string` | `""` | no |
+| load\_balancer\_update\_timeout | Timeout value when updating the ALB. | `string` | `"10m"` | no |
 | managedby | ManagedBy, eg 'CloudDrove'. | `string` | `"hello@clouddrove.com"` | no |
 | name | Name  (e.g. `app` or `cluster`). | `string` | `""` | no |
-| network\_security\_group\_id | Id of network security group for which flow are to be calculated | `string` | `null` | no |
-| repository | Terraform current module repo | `string` | `"https://github.com/clouddrove/terraform-azure-virtual-network"` | no |
-| resource\_group\_name | The name of the resource group in which to create the virtual network. Changing this forces a new resource to be created. | `string` | `""` | no |
-| retention\_policy\_days | The number of days to retain flow log records. | `number` | `30` | no |
-| retention\_policy\_enabled | Boolean flag to enable/disable retention. | `bool` | `true` | no |
-| storage\_account\_id | Id of storage account. | `string` | `null` | no |
-| tags | Additional tags (e.g. map(`BusinessUnit`,`XYZ`). | `map(any)` | `{}` | no |
-| workspace\_id | Log analytics workspace id | `string` | `null` | no |
-| workspace\_resource\_id | Resource id of workspace | `string` | `null` | no |
+| preserve\_host\_header | Indicates whether Host header should be preserve and forward to targets without any change. Defaults to false. | `bool` | `false` | no |
+| protocol | The protocol. If not icmp, tcp, udp, or all use the. | `string` | `"tcp"` | no |
+| repository | Terraform current module repo | `string` | `"https://github.com/clouddrove/terraform-aws-alb"` | no |
+| sg\_description | The security group description. | `string` | `"Instance default security group (only egress access is allowed)."` | no |
+| sg\_egress\_description | Description of the egress and ingress rule | `string` | `"Description of the rule."` | no |
+| sg\_egress\_ipv6\_description | Description of the egress\_ipv6 rule | `string` | `"Description of the rule."` | no |
+| sg\_ids | of the security group id. | `list(any)` | `[]` | no |
+| sg\_ingress\_description | Description of the ingress rule | `string` | `"Description of the ingress rule use elasticache."` | no |
+| ssl\_policy | Name of the SSL Policy for the listener. Required if protocol is HTTPS or TLS. | `string` | `"ELBSecurityPolicy-TLS-1-2-2017-01"` | no |
+| status\_code | The HTTP redirect code. The redirect is either permanent (HTTP\_301) or temporary (HTTP\_302). | `string` | `"HTTP_301"` | no |
+| subnet\_mapping | A list of subnet mapping blocks describing subnets to attach to network load balancer | `list(map(string))` | `[]` | no |
+| subnets | A list of subnet IDs to attach to the LB. Subnets cannot be updated for Load Balancers of type network. Changing this value will for load balancers of type network will force a recreation of the resource. | `list(any)` | `[]` | no |
+| target\_group\_port | The port on which targets receive traffic, unless overridden when registering a specific target. | `string` | `80` | no |
+| target\_groups | A list of maps containing key/value pairs that define the target groups to be created. Order of these maps is important and the index of these are to be referenced in listener definitions. Required key/values: name, backend\_protocol, backend\_port. Optional key/values are in the target\_groups\_defaults variable. | `any` | `[]` | no |
+| target\_id | The ID of the target. This is the Instance ID for an instance, or the container ID for an ECS container. If the target type is ip, specify an IP address. | `list(any)` | n/a | yes |
+| to\_port | equal to 0. The supported values are defined in the IpProtocol argument on the IpPermission API reference | `number` | `65535` | no |
+| vpc\_id | The identifier of the VPC in which to create the target group. | `string` | `""` | no |
+| with\_target\_group | Create LoadBlancer without target group | `bool` | `true` | no |
+| xff\_header\_processing\_mode | Determines how the load balancer modifies the X-Forwarded-For header in the HTTP request before sending the request to the target. | `string` | `"append"` | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| ddos\_protection\_plan\_id | The ID of the DDoS Protection Plan |
-| network\_watcher\_id | The ID of the Network Watcher. |
-| vnet\_address\_space | The address space of the newly created vNet |
-| vnet\_guid | The GUID of the virtual network. |
-| vnet\_id | The id of the newly created vNet |
-| vnet\_location | The location of the newly created vNet |
-| vnet\_name | The name of the newly created vNet |
-| vnet\_rg\_name | The name of the resource group in which to create the virtual network. Changing this forces a new resource to be created |
+| arn | The ARN of the ALB. |
+| arn\_suffix | The ARN suffix of the ALB. |
+| clb\_arn | The ARN of the CLB. |
+| clb\_name | DNS name of CLB. |
+| clb\_zone\_id | The ID of the zone which ALB is provisioned. |
+| dns\_name | DNS name of ALB. |
+| http\_listener\_arn | The ARN of the HTTP listener. |
+| https\_listener\_arn | The ARN of the HTTPS listener. |
+| listener\_arns | A list of all the listener ARNs. |
+| main\_target\_group\_arn | The main target group ARN. |
+| name | The ARN suffix of the ALB. |
+| security\_group\_arn | Amazon Resource Name (ARN) of the security group |
+| security\_group\_id | ID of the security group |
+| tags | A mapping of tags to assign to the resource. |
+| zone\_id | The ID of the zone which ALB is provisioned. |
 
 
 
@@ -166,9 +359,9 @@ You need to run the following command in the testing folder:
 
 
 ## Feedback 
-If you come accross a bug or have any feedback, please log it in our [issue tracker](https://github.com/clouddrove/terraform-azure-vnet/issues), or feel free to drop us an email at [hello@clouddrove.com](mailto:hello@clouddrove.com).
+If you come accross a bug or have any feedback, please log it in our [issue tracker](https://github.com/clouddrove/terraform-aws-alb/issues), or feel free to drop us an email at [hello@clouddrove.com](mailto:hello@clouddrove.com).
 
-If you have found it worth your time, go ahead and give us a ★ on [our GitHub](https://github.com/clouddrove/terraform-azure-vnet)!
+If you have found it worth your time, go ahead and give us a ★ on [our GitHub](https://github.com/clouddrove/terraform-aws-alb)!
 
 ## About us
 
