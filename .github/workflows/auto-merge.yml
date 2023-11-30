@@ -1,9 +1,13 @@
 name: Dependabot auto-approve
 on: 
   pull_request:
-  check_suite:
+  workflow_run:
+    workflows: 
+    - '*'
+    strategy: resolve-on-first
     types:
-      - completed
+      - completed 
+  # check_suite:
 
 permissions:
   contents: write
