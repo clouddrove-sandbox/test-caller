@@ -25,7 +25,7 @@ module "public_subnets" {
   source             = "clouddrove/subnet/aws"
   version            = "2.0.0"
   name               = local.name
-  environment        = local.environment
+  environment      = local.environment
   availability_zones = ["eu-west-1b", "eu-west-1c"]
   type               = "public"
   vpc_id             = module.vpc.vpc_id
