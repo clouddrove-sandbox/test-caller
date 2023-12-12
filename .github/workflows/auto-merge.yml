@@ -1,9 +1,9 @@
 name: Dependabot auto-approve
 on: 
   pull_request:
-    paths:
+    paths-ignore:
       # - '**/*'
-      - '!**/*README*'
+      - '**/*README*'
   # merge_group:
     # types: [checks_requested]
   # check_suite:
