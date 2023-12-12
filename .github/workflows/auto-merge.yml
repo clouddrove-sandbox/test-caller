@@ -2,7 +2,7 @@ name: Dependabot auto-approve
 on: 
   pull_request:
     paths:
-      - '**/*'
+      # - '**/*'
       - '!**/*README*'
   # merge_group:
     # types: [checks_requested]
